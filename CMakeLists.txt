@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
+project(krryn)
+
 add_definitions(/wd4250)
 
 include_directories(
