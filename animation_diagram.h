@@ -10,7 +10,7 @@ namespace usr{
 
 	class node_animation : public gui::diagram_node{
 	public:
-		node_animation(const std::string &a_Title, gui::diagram_id_t a_Id) : diagram_node(a_Title, a_Id) {}
+		node_animation(gui::diagram_impl_base *a_Parent, const std::string &a_Title, gui::diagram_id_t a_Id) : diagram_node(a_Parent, a_Title, a_Id) {}
 
 		virtual void init(gui::diagram_factory *a_Factory){
 			diagram_node::init(a_Factory);
@@ -21,7 +21,7 @@ namespace usr{
 
 	class node_blend : public gui::diagram_node{
 	public:
-		node_blend(gui::diagram_id_t a_Id) : diagram_node("Blend", a_Id) {}
+		node_blend(gui::diagram_impl_base *a_Parent, gui::diagram_id_t a_Id) : diagram_node(a_Parent, "Blend", a_Id) {}
 
 		virtual void init(gui::diagram_factory *a_Factory){
 			diagram_node::init(a_Factory);
@@ -34,7 +34,7 @@ namespace usr{
 
 	class node_output : public gui::diagram_node{
 	public:
-		node_output(gui::diagram_id_t a_Id) : diagram_node("Output", a_Id) {}
+		node_output(gui::diagram_impl_base *a_Parent, gui::diagram_id_t a_Id) : diagram_node(a_Parent, "Output", a_Id) {}
 
 		virtual void init(gui::diagram_factory *a_Factory){
 			diagram_node::init(a_Factory);
@@ -156,14 +156,14 @@ namespace usr{
 
 	class diagram_factory_default : public gui::diagram_factory{
 	public:
-		virtual gui::diagram_node* create_node(const std::string &a_Title, gui::diagram_id_t a_Id){
+		virtual gui::diagram_node* create_node(gui::diagram_impl_base *a_Parent, const std::string &a_Title, gui::diagram_id_t a_Id){
 			std::string l_Title = core::to_lower(a_Title);
 
-			if(core::starts_with(l_Title, "animation"))	return new node_animation(a_Title, a_Id);
-			if(l_Title == "blend")					return new node_blend(a_Id);
-			if(l_Title == "output")					return new node_output(a_Id);
+			if(core::starts_with(l_Title, "animation"))	return new node_animation(a_Parent, a_Title, a_Id);
+			if(l_Title == "blend")					return new node_blend(a_Parent, a_Id);
+			if(l_Title == "output")					return new node_output(a_Parent, a_Id);
 
-			return new gui::diagram_node(a_Title, a_Id);
+			return new gui::diagram_node(a_Parent, a_Title, a_Id);
 		}
 
 		virtual gui::diagram_port* create_port(gui::port_type a_Type, const std::string &a_Name, gui::diagram_node_base *a_Node, gui::diagram_id_t a_Id){

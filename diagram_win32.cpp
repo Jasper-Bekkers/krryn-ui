@@ -70,7 +70,7 @@ namespace{
 	// As a side effect we update the AABB of the port because this function knows exactly what data
 	// is used to draw it and thus gives us pixel accurate results
 	void draw_bullet(Graphics &g, diagram_colors &c, int x, int y, int bulletOffset, diagram_port_win32 *a_Port){
-		RectF rect(x + bulletOffset, y + 6, 5, 5);
+		RectF rect(float(x + bulletOffset), float(y + 6), 5.0f, 5.0f);
 		g.FillEllipse(&c.bulletBrush, rect);
 
 		a_Port->m_BulletCenter.X = rect.X + rect.Width / 2;
@@ -196,7 +196,7 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	l_InSize.first += (l_OutSize.second == 0 ? 0 : 9);
 	l_OutSize.first += (l_OutSize.second == 0 ? 0 : 3);
 
-	int width = max(outrect.Width, l_InSize.first + l_OutSize.first);
+	int width = max((int)outrect.Width, l_InSize.first + l_OutSize.first);
 	int height = max(l_InSize.second, l_OutSize.second);
 	int bulletOffset = y;
 
@@ -244,7 +244,7 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	if(get_image())
 	{
 		Bitmap bmp(64, 64, 64 * 4, PixelFormat32bppARGB, (BYTE*)get_image());
-		int imgx = x + (l_BodyAabb.GetRight() - l_BodyAabb.GetLeft()) / 2 - 32;
+		int imgx = x + ((int)l_BodyAabb.GetRight() - (int)l_BodyAabb.GetLeft()) / 2 - 32;
 		g.DrawImage(&bmp, imgx, y + headerHeight + 5 + arcSize / 2, 64, 64);
 	}
 
@@ -310,9 +310,9 @@ diagram_node_base* diagram_impl_win32::create_node(const std::string &a_Title, d
 
 	if(a_Id == g_InvalidId){
 		m_NodeIdCounter++;
-		l_Node = m_Factory->create_node(a_Title, m_NodeIdCounter);
+		l_Node = m_Factory->create_node(this, a_Title, m_NodeIdCounter);
 	}else{
-		l_Node = m_Factory->create_node(a_Title, a_Id);
+		l_Node = m_Factory->create_node(this, a_Title, a_Id);
 	}
 
 	if(m_IdToNodes[l_Node->get_id()]){
@@ -410,17 +410,17 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 
 		Point l_Points[] = {
 			Point(
-				l_Start->m_BulletCenter.X,
-				l_Start->m_BulletCenter.Y),
+				(int)(l_Start->m_BulletCenter.X),
+				(int)(l_Start->m_BulletCenter.Y)),
 			Point(
-				l_Start->m_BulletCenter.X + (l_Start->get_type() == gui::in ? -100 : 100),	
-				l_Start->m_BulletCenter.Y),
+				(int)(l_Start->m_BulletCenter.X + (l_Start->get_type() == gui::in ? -100 : 100)),
+				(int)(l_Start->m_BulletCenter.Y)),
 			Point(
-				l_End->m_BulletCenter.X + (l_End->get_type() == gui::in ? -100 : 100),
-				l_End->m_BulletCenter.Y),
+				(int)(l_End->m_BulletCenter.X + (l_End->get_type() == gui::in ? -100 : 100)),
+				(int)(l_End->m_BulletCenter.Y)),
 			Point(
-				l_End->m_BulletCenter.X,
-				l_End->m_BulletCenter.Y),
+				(int)(l_End->m_BulletCenter.X),
+				(int)(l_End->m_BulletCenter.Y)),
 		};
 
 		g.DrawBezier(selected ? &c.selectedBezierPen : &c.bezierPen, l_Points[0], l_Points[1], l_Points[2], l_Points[3]);
@@ -516,6 +516,48 @@ void diagram_impl_win32::find_node_or_port(REAL x, REAL y, diagram_node_win32 **
 		}
 	}
 }
+
+void diagram_impl_win32::destroy_node(diagram_node_base* a_Node)
+{
+	for (auto it = m_Connections.begin(); it != m_Connections.end(); )
+	{
+		if (m_IdToNodes[it->m_PortA >> 16] == a_Node ||
+			m_IdToNodes[it->m_PortB >> 16] == a_Node)
+		{
+			it = m_Connections.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+	for (auto it = m_IdToNodes.begin(); it != m_IdToNodes.end(); )
+	{
+		if (it->second == a_Node)
+		{
+			it = m_IdToNodes.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+	for (auto it = m_Nodes.begin(); it != m_Nodes.end();)
+	{
+		if (*it == a_Node)
+		{
+			it = m_Nodes.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+}
+
 
 bool diagram_impl_win32::connect(diagram_id_t a_FullPortIdA, diagram_id_t a_FullPortIdB){
 	// don't allow attaching to ports of the same node
@@ -692,7 +734,7 @@ LRESULT diagram_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam,
 	if(uMsg == WM_PAINT){
 		wm_paint(hWnd);
 		return 0;
-	}if(uMsg == WM_MBUTTONDOWN){
+	}else if(uMsg == WM_MBUTTONDOWN){
 		wm_mbuttondown(wParam, lParam);
 		return 0;
 	}else if(uMsg == WM_MBUTTONUP){

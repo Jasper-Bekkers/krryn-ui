@@ -31,8 +31,8 @@ namespace gui{
 
 	class diagram_node_base{
 	public:
-		virtual ~diagram_node_base() {}
-		diagram_node_base() : m_Factory(0), m_UserData(0) {}
+		virtual ~diagram_node_base() { m_Parent->destroy_node(this); }
+		diagram_node_base(diagram_impl_base *a_Parent) : m_Factory(0), m_UserData(0), m_Parent(a_Parent) {}
 
 		virtual void init(diagram_factory *a_Factory) { m_Factory = a_Factory; }
 
@@ -55,6 +55,7 @@ namespace gui{
 
 		void *m_UserData; 
 	private:
+		diagram_impl_base *m_Parent;
 		diagram_factory *m_Factory;
 	};
 
@@ -69,7 +70,7 @@ namespace gui{
 
 	class diagram_factory{
 	public:
-		virtual diagram_node_base* create_node(const std::string &a_Title, diagram_id_t a_Id) = 0;
+		virtual diagram_node_base* create_node(gui::diagram_impl_base *a_Parent, const std::string &a_Title, diagram_id_t a_Id) = 0;
 		virtual diagram_port_base* create_port(port_type a_Type, const std::string &a_Name, diagram_node_base *a_Node, diagram_id_t a_Id) = 0;
 
 		virtual diagram_connection_policy* create_connection_policy() = 0;
@@ -95,7 +96,7 @@ namespace gui{
 
 	class diagram_node : public diagram_node_base{
 	public:
-		diagram_node(const std::string &a_Title, diagram_id_t a_Id);
+		diagram_node(diagram_impl_base *a_Diagram, const std::string &a_Title, diagram_id_t a_Id);
 
 		virtual std::string get_title() const;
 		virtual size_t get_port_count();

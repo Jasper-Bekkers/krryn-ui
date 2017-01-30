@@ -28,7 +28,7 @@ namespace gui_imp{
 
 	class diagram_node_win32 : public gui::diagram_node_base{
 	public:
-		diagram_node_win32(gui::diagram_node_base *a_Node) : m_Node(a_Node) {}
+		diagram_node_win32(gui::diagram_impl_base *a_Parent, gui::diagram_node_base *a_Node) : m_Node(a_Node), gui::diagram_node_base(a_Parent) {}
 		void draw_node(Gdiplus::Graphics &g, diagram_colors &c, int x, int y, bool border = false);
 		std::pair<int, int> get_max_width_and_total_height(Gdiplus::Graphics &g, Gdiplus::Font &a_Font, Gdiplus::RectF &a_Layout, gui::port_type a_Type);
 
@@ -58,8 +58,8 @@ namespace gui_imp{
 	public:
 		diagram_factory_win32(gui::diagram_factory *a_Factory) : m_Factory(a_Factory) {}
 
-		virtual gui::diagram_node_base* create_node(const std::string &a_Title, gui::diagram_id_t a_Id){
-			return new diagram_node_win32(m_Factory->create_node(a_Title, a_Id));
+		virtual gui::diagram_node_base* create_node(gui::diagram_impl_base *a_Diagram, const std::string &a_Title, gui::diagram_id_t a_Id){
+			return new diagram_node_win32(a_Diagram, m_Factory->create_node(a_Diagram, a_Title, a_Id));
 		}
 
 		virtual gui::diagram_port_base* create_port(gui::port_type a_Type, const std::string &a_Name, gui::diagram_node_base *a_Node, gui::diagram_id_t a_Id){
@@ -94,6 +94,7 @@ namespace gui_imp{
 
 		virtual void set_center(math::point a_Center) { m_CenterX = a_Center.m_X; m_CenterY = a_Center.m_Y; }
 		virtual math::point get_center() const { return math::point(m_CenterX, m_CenterY); }
+		virtual void destroy_node(gui::diagram_node_base* a_Node);
 	private:
 		HDC m_Hdc;
 		bool m_MovingSelection;

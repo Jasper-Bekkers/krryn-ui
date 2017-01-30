@@ -160,8 +160,6 @@ int main(int argc, char **argv)
 
 	m_Tabs->m_OnResize += resize;
 
-
-	//m_Button->m_OnResize += resize;
 	m_Button->m_OnClick += click;
 
 	m_Diagram->m_OnSelectionChanged += selection;
@@ -177,22 +175,26 @@ int main(int argc, char **argv)
 	ball = read(L"./Images/Ball.png");
 
 	j->set_image(ball, 64, 64);
-	j->create_port(gui::out, "Temp");
+	auto p = j->create_port(gui::out, "Temp");
 	j->m_UserData = (void*)new std::string("User data");
 
 	diagram_node_base * m = m_Diagram->create_node("Other");
-	m->move_to(0, 0);
+	m->move_to(-100, 0);
 	m->create_port(gui::in, "Waddup");
 
 	diagram_node_base *w = m_Diagram->create_node("wat?");
 	w->set_image(heart, 64, 64);
 	w->move_to(0, 110);
-	w->create_port(gui::in, "Test");
+	auto k = w->create_port(gui::in, "Test");
 
 	diagram_node_base *h = m_Diagram->create_node("hallo");
-	h->move_to(0, 110);
+	h->move_to(110, 110);
 	h->create_port(gui::out, "QQQQ");
 	h->create_port(gui::in, "Mul");
+
+	m_Diagram->connect(k->get_id(), p->get_id());
+
+	delete w;
 
 	while(true)
 	{

@@ -36,5 +36,6 @@ namespace gui{
 		virtual connection get_connection(size_t i) = 0;
 		virtual void set_center(math::point a_Center) = 0;
 		virtual math::point get_center() const = 0;
+		virtual void destroy_node(diagram_node_base* a_Node) = 0;
 	};
 }

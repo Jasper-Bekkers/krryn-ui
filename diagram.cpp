@@ -9,8 +9,8 @@ diagram_id_t diagram_port_base::get_id() const{
 	return (get_node()->get_id() << 16) + (get_node_local_id() & 0xFFFF);
 }
 
-diagram_node::diagram_node(const std::string &a_Title, diagram_id_t a_Id) 
-	: m_Title(a_Title), m_PortIdCounter(0), m_Id(a_Id), m_HeaderColor(0xD1DDF4), m_Image(0) {}
+diagram_node::diagram_node(diagram_impl_base *a_Diagram, const std::string &a_Title, diagram_id_t a_Id)
+	: m_Title(a_Title), m_PortIdCounter(0), m_Id(a_Id), m_HeaderColor(0xD1DDF4), m_Image(0), diagram_node_base(a_Diagram) {}
 
 void diagram_node::move_to(int x, int y){
 	m_Position.m_X = x;
