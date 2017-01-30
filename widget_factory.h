@@ -10,6 +10,7 @@
 #include "code_highlighter_impl_base.h"
 #include "diagram_impl_base.h"
 #include "property_editor_impl_base.h"
+#include "opengl_context_impl_base.h"
 
 #define TPL_PROTOTYPE(type) \
 	template<> \
@@ -35,6 +36,7 @@ namespace gui{
 	TPL_PROTOTYPE(row_impl);
 	TPL_PROTOTYPE(tabs_impl);
 	TPL_PROTOTYPE(label_impl);
+	TPL_PROTOTYPE(opengl_context_impl);
 	TPL_PROTOTYPE(textbox_impl);
 	TPL_PROTOTYPE(event_loop_impl);
 	TPL_PROTOTYPE(code_highlighter_impl);

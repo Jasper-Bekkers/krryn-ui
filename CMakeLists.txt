@@ -54,6 +54,11 @@ add_library(krryn-ui
 	label_win32.h
 	lexical_cast.cpp
 	lexical_cast.h
+	opengl_context.h
+	opengl_context_impl_base.h
+	opengl_context.cpp
+	opengl_context_win32.cpp
+	opengl_context_win32.h
 	property_editor.cpp
 	property_editor.h
 	property_editor_impl_base.h

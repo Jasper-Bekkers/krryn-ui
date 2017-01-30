@@ -5,6 +5,7 @@
 #include "../event_loop.h"
 #include "../textbox.h"
 #include "../button.h"
+#include "../opengl_context.h"
 #include "../label.h"
 #include "../tabs.h"
 #include "../animation_diagram.h"
@@ -26,6 +27,7 @@ event_loop m_EventLoop;
 textbox *m_Textbox;
 label *m_Label;
 button *m_Button, *m_Button1;
+opengl_context *m_OpenGL;
 tabs *m_Tabs;
 code_highlighter *m_Code;
 diagram_node_base * j;
@@ -110,9 +112,18 @@ int main(int argc, char **argv)
 	m_Diagram = diagram::with()
 		.top(0)
 		.width(l_Panel2->get_size().m_Width - 400)
-		.height(l_Panel2->get_size().m_Height)
+		.height(l_Panel2->get_size().m_Height / 2)
 		.parent(l_Panel2)
 		.factory(new usr::diagram_factory_default())
+	.create();
+
+
+	m_OpenGL = opengl_context::with()
+		.text("Jasper")
+		.parent(l_Panel2)
+		.height(l_Panel2->get_size().m_Height / 2)
+		.top(l_Panel2->get_size().m_Height / 2)
+		.width(l_Panel2->get_size().m_Width - 400)
 	.create();
 
 	//m_Code = code_highlighter::with()
@@ -157,6 +168,7 @@ int main(int argc, char **argv)
 		.parent(l_Panel)
 		.text("Label")
 	.create();
+
 
 	m_Tabs->m_OnResize += resize;
 

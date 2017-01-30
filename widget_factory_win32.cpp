@@ -12,6 +12,7 @@
 #include "code_highlighter_win32.h"
 #include "diagram_win32.h"
 #include "property_editor_win32.h"
+#include "opengl_context_win32.h"
 
 namespace gui{
 	IMPL_WIDGET(window_impl, win32);
@@ -21,6 +22,7 @@ namespace gui{
 	IMPL_WIDGET(diagram_impl, win32);
 	IMPL_WIDGET(column_impl, win32);
 	IMPL_WIDGET(label_impl, win32);
+	IMPL_WIDGET(opengl_context_impl, win32);
 	IMPL_WIDGET(row_impl, win32);
 	IMPL_WIDGET(tabs_impl, win32);
 	IMPL_WIDGET(textbox_impl, win32);
