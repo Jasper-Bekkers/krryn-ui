@@ -183,10 +183,10 @@ int main(int argc, char **argv)
 	m_Button->set_size(100, 100);
 
 	j = m_Diagram->create_node("Name");
-	j->move_to(0, 0);
+	j->move_to(-20, 0);
 
-	heart = read(L"./Images/Heart.png");
-	ball = read(L"./Images/Ball.png");
+	heart = read(L"../../krryn-ui/Images/Heart.png");
+	ball = read(L"../../krryn-ui/Images/Ball.png");
 
 	j->set_image(ball, 64, 64);
 	auto p = j->create_port(gui::out, "Temp");
