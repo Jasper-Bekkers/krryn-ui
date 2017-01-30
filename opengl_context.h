@@ -11,7 +11,7 @@ namespace gui{
 
 		opengl_context(const with &a_Initialize);
 
-		void set_text(const std::string &a_Text);
+		void swap_buffers();
 
 		virtual void *handle();
 		virtual ~opengl_context() { m_Pimpl->destroy(); }
@@ -23,12 +23,16 @@ namespace gui{
 	public:
 		opengl_context_initializer();
 
-		opengl_context_initializer &text(const std::string &a_Text);
+		opengl_context_initializer &fullscreen(bool a_Fullscreen);
+		opengl_context_initializer &bits_per_pixel(int a_BitsPerPixel);
 
-		std::string get_text() const { return m_Text; }
+		bool get_fullscreen() const { return m_Fullscreen; }
+		int get_bits_per_pixel() const { return m_BitsPerPixel; }
 
 		opengl_context* create();
 	private:
+		bool m_Fullscreen = false;
+		int m_BitsPerPixel = 32;
 		std::string m_Text;
 	};
 }

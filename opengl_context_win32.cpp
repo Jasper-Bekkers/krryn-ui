@@ -2,27 +2,47 @@
 #include "opengl_context_win32.h"
 #include "widget_helper_win32.h"
 
+#include <gl/gl.h>
+
 using namespace gui_imp;
 using namespace gui;
 
-void opengl_context_impl_win32::make(const opengl_context_initializer &a_Initializer){
-	widget_helper_win32::load_common_controls();
+#pragma comment(lib, "OpenGL32.lib")
 
-	HWND l_ParentWnd = (HWND)a_Initializer.get_parent()->handle();
+void opengl_context_impl_win32::make(const opengl_context_initializer &a_Initializer){
+	GLuint l_PixelFormat = 0;
+	widget_helper_win32::load_common_controls();
 
 	{
 		widget_hook_win32(this);
 
-		m_hWnd = CreateWindow(
-			TEXT("STATIC"), 
-			a_Initializer.get_text().c_str(), 
-			WS_TABSTOP | widget_helper_win32::visible(a_Initializer) | WS_CHILD, 
-			a_Initializer.get_left(), a_Initializer.get_top(), 
-			a_Initializer.get_width(), a_Initializer.get_height(), 
-			l_ParentWnd, 0, 0, 0);
+		widget_helper_win32::create_window(a_Initializer, m_hWnd, m_hDC);
+	}
+
+	static PIXELFORMATDESCRIPTOR l_Pfd = { sizeof(PIXELFORMATDESCRIPTOR), 1,
+		PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER,
+		PFD_TYPE_RGBA, a_Initializer.get_bits_per_pixel(), 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 16, 0, 0, PFD_MAIN_PLANE, 0, 0, 0, 0 };
+
+	if (!(l_PixelFormat = ChoosePixelFormat(m_hDC, &l_Pfd))) {
+		throw widget_exception("No matching pixel format descriptor");
+	}
+
+	if (!SetPixelFormat(m_hDC, l_PixelFormat, &l_Pfd)) {
+		throw widget_exception("Can't set the pixel format");
+	}
+
+	if (!(m_hRC = wglCreateContext(m_hDC))) {
+		throw widget_exception("Can't create rendering context");
+		return;
+	}
+
+	if (!wglMakeCurrent(m_hDC, m_hRC)) {
+		wglMakeCurrent(NULL, NULL);
 	}
 }
 
-void opengl_context_impl_win32::set_text(const std::string &a_Text){
-	SetWindowTextA(m_hWnd, a_Text.c_str());
+void opengl_context_impl_win32::swap_buffers()
+{
+	SwapBuffers(m_hDC);
 }

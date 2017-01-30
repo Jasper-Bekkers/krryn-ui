@@ -9,7 +9,11 @@ namespace gui_imp{
 	class opengl_context_impl_win32 : public virtual widget_win32, public virtual gui::opengl_context_impl_base{
 	public:
 		virtual void make(const gui::opengl_context_initializer &a_Initializer);
-		virtual void set_text(const std::string &a_Text);
+
+		virtual void swap_buffers() override;
+	private:
+		HDC m_hDC;
+		HGLRC m_hRC;
 	};
 }
 

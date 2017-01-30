@@ -76,27 +76,17 @@ namespace gui{
 
 			RECT l_WindowRect = get_window_rect(a_Initializer);
 
-			if(a_Initializer.m_Fullscreen){
+			if(a_Initializer.get_fullscreen()){
 				DEVMODE l_dmScreenSettings;
 				memset(&l_dmScreenSettings, 0, sizeof(l_dmScreenSettings));
 				l_dmScreenSettings.dmSize = sizeof(l_dmScreenSettings);
 				l_dmScreenSettings.dmPelsWidth = a_Initializer.get_width();
-				l_dmScreenSettings.dmPelsHeight	= a_Initializer.get_height();
-				l_dmScreenSettings.dmBitsPerPel	= a_Initializer.m_BitsPerPixel;
+				l_dmScreenSettings.dmPelsHeight = a_Initializer.get_height();
+				l_dmScreenSettings.dmBitsPerPel	= a_Initializer.get_bits_per_pixel();
 				l_dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
-				if(ChangeDisplaySettings(&l_dmScreenSettings, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL){
-					// set parent window always on top and 
-					// hides it's border / title bar / cursor et cetera
-					SetWindowPos(
-						l_ParentWnd, HWND_TOPMOST, 
-						0, 0, 0, 0, SWP_NOREPOSITION | SWP_NOSIZE);
-					SetWindowLong(l_ParentWnd, GWL_STYLE, visible(a_Initializer) | WS_POPUP);
-					SetWindowLong(l_ParentWnd, GWL_EXSTYLE, NULL);
-					ShowCursor(FALSE);
-
-					l_Style = visible(a_Initializer) | WS_CHILD;
-				}else{
+				auto res = ChangeDisplaySettings(&l_dmScreenSettings, CDS_FULLSCREEN);
+				if(res != DISP_CHANGE_SUCCESSFUL){
 					throw widget_exception("Can't change to fullscreen mode");
 				}
 			}else{
@@ -115,6 +105,20 @@ namespace gui{
 				l_ParentWnd, NULL, NULL, NULL))){
 
 					throw widget_exception("Failed to create window");
+
+			}
+
+			if (a_Initializer.get_fullscreen()) {
+				// set window always on top and 
+				// hides it's border / title bar / cursor et cetera
+				SetWindowPos(
+					a_hWnd, HWND_TOPMOST,
+					0, 0, 0, 0, SWP_NOREPOSITION | SWP_NOSIZE);
+				SetWindowLong(a_hWnd, GWL_STYLE, visible(a_Initializer) | WS_POPUP);
+				SetWindowLong(a_hWnd, GWL_EXSTYLE, NULL);
+				ShowCursor(FALSE);
+
+				l_Style = visible(a_Initializer) | WS_CHILD;
 			}
 
 			if(!(a_hDC = GetDC(a_hWnd))){

@@ -12,9 +12,11 @@
 #include "../code_highlighter.h"
 #include "../property_editor.h"
 
+
 // tmp
 #include <windows.h>
 #include <gdiplus.h>
+#include <gl/gl.h>
 
 // Dc.h & Dc.cpp can parse the property definition files (a la DDF)
 // those will need to be turned into "property sheets" and we will need some kind of content storage files
@@ -119,8 +121,8 @@ int main(int argc, char **argv)
 
 
 	m_OpenGL = opengl_context::with()
-		.text("Jasper")
 		.parent(l_Panel2)
+		.fullscreen(false)
 		.height(l_Panel2->get_size().m_Height / 2)
 		.top(l_Panel2->get_size().m_Height / 2)
 		.width(l_Panel2->get_size().m_Width - 400)
@@ -211,5 +213,10 @@ int main(int argc, char **argv)
 	while(true)
 	{
 		m_EventLoop.update();
+
+		glClearColor(1, 0, 1, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		m_OpenGL->swap_buffers();
 	}
 }
