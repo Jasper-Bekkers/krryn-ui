@@ -57,7 +57,9 @@ void row_impl_win32::on_child_resize(resize_args *a_Args){
 
 void row_impl_win32::add_child(widget &a_Widget){
 	row_impl_base::add_child(a_Widget);
-	a_Widget.m_OnResize += slot(this, &row_impl_win32::on_child_resize);
+	a_Widget.m_OnResize += [this](resize_args* a_Args) {
+		on_child_resize(a_Args);
+	};
 
 	a_Widget.set_pos(m_Padding + m_MyWidth, m_Padding );
 	size l_Size = a_Widget.get_size();

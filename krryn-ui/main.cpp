@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 
 	m_Button->m_OnClick += click;
 
-	m_Diagram->m_OnSelectionChanged += selection;
+	//m_Diagram->m_OnSelectionChanged += selection;
 
 	m_Textbox->m_OnTextChange += change;
 

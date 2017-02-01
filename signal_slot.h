@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
+#include <functional>
 
 namespace gui{
-
+/*
 template<typename _Argument>
 class basic_observer{
 public:
-	virtual void call(_Argument a_Argument) {};
+	virtual void call(_Argument a_Argument) =0;
 };
 
 template<typename _Argument>
@@ -37,31 +38,36 @@ private:
 	_ClassPointer *m_Object;
 	member_t m_Function;
 };
-
-template<typename _ClassPointer, typename _Argument>
-basic_observer<_Argument> slot(_ClassPointer *a_Class, void (_ClassPointer::*a_Function)(_Argument)){
+*/
+/*
+template<typename _ClassPointer, typename... _Argument>
+basic_observer_mem<_ClassPointer, _Argument> slot(_ClassPointer *a_Class, void (_ClassPointer::*a_Function)(_Argument)){
 	return basic_observer_mem<_ClassPointer, _Argument>(a_Class, a_Function);
-}
+}*/
 
-template<typename _Argument>
+template<typename... _Argument>
 class signal{
 public:
-	void operator +=(const basic_observer<_Argument> &a_Callback){
+	//void operator +=(const basic_observer<_Argument> &a_Callback){
+	//	m_Handlers.push_back(a_Callback);
+	//}
+	//
+	//void operator +=(void (*a_Callback)(_Argument)){
+	//	m_Handlers.push_back(basic_observer_fun<_Argument>(a_Callback));
+	//}
+
+	void operator +=(std::function<void(_Argument...)> const& a_Callback) {
 		m_Handlers.push_back(a_Callback);
 	}
 
-	void operator +=(void (*a_Callback)(_Argument)){
-		m_Handlers.push_back(basic_observer_fun<_Argument>(a_Callback));
-	}
 
-	void trigger(const _Argument &a_Argument){
-		for(observer_list_t::iterator i = m_Handlers.begin(); i != m_Handlers.end(); i++){
-			(*i).call(a_Argument);
+	void trigger(_Argument... a_Arguments){
+		for(auto handler : m_Handlers){
+			handler(a_Arguments...);
 		}
 	}
 private:
-	typedef std::vector<basic_observer<_Argument>> observer_list_t;
-	observer_list_t m_Handlers;
+	std::vector<std::function<void(_Argument...)>> m_Handlers;
 };
 
 }

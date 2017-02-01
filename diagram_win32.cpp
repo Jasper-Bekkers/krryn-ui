@@ -204,7 +204,6 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 		height += 75;
 		width = max(width, 75);
 		bulletOffset += 70;
-		
 	}
 
 	RectF l_Aabb;
@@ -734,7 +733,9 @@ LRESULT diagram_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam,
 	if(uMsg == WM_PAINT){
 		wm_paint(hWnd);
 		return 0;
-	}else if(uMsg == WM_MBUTTONDOWN){
+	}
+	
+	if(uMsg == WM_MBUTTONDOWN){
 		wm_mbuttondown(wParam, lParam);
 		return 0;
 	}else if(uMsg == WM_MBUTTONUP){

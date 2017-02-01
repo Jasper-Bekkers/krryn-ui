@@ -61,7 +61,7 @@ namespace{
 	const unsigned int g_TabHeight = 28;
 
 	RECT rectf_to_rect(RectF r){
-		RECT t = {(INT)r.X, (INT)r.Y, (INT)r.X + r.Width, (INT)r.Y + r.Height};
+		RECT t = {(INT)r.X, (INT)r.Y, (INT)r.X + (INT)r.Width, (INT)r.Y + (INT)r.Height};
 		return t;
 	}
 }
@@ -100,7 +100,9 @@ void tabs_impl_win32::make(const tabs_initializer &a_Initializer){
 
 		math::size l_ParentSize = a_Initializer.get_parent()->get_size();
 
-		a_Initializer.get_parent()->m_OnResize += slot(this, &tabs_impl_win32::on_parent_resize);
+		a_Initializer.get_parent()->m_OnResize += [this](resize_args* a_Arg) {
+			on_parent_resize(a_Arg);
+		};
 		
 		{
 			widget_hook_win32(this);
@@ -261,7 +263,7 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 	m_VisibleTabs[a_Index].m_BoundingBox = bb;
 	m_VisibleTabs[a_Index].m_CloseBox    = close;
 
-	return bb.Width;
+	return (int)bb.Width;
 }
 
 void tabs_impl_win32::wm_paint_tabs(HWND hWnd){
@@ -332,8 +334,8 @@ LRESULT tabs_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 			unsigned int oldActive = m_ActiveTab;
 
 			for(visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++){
-				bool inside = i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				bool close = i->second.m_CloseBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				bool inside = !!i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				bool close = !!i->second.m_CloseBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
 				if(close){
 					remove_child(i->first);

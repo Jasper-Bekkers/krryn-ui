@@ -59,7 +59,9 @@ void column_impl_win32::add_child(widget &a_Widget){
 	column_impl_base::add_child(a_Widget);
 
 	a_Widget.set_pos(m_Padding, m_Padding + m_MyHeight);
-	a_Widget.m_OnResize += slot(this, &column_impl_win32::on_child_resize);
+	a_Widget.m_OnResize += [this](resize_args* a_Args){
+		on_child_resize(a_Args);
+	};
 
 	size l_Size = a_Widget.get_size();
 
