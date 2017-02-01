@@ -10,7 +10,7 @@ include_directories(
 	)
 
 
-add_subdirectory("krryn-ui")
+add_subdirectory("krryn-ui-test")
 add_subdirectory("propertygrid")
 
 add_library(krryn-ui

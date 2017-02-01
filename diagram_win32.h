@@ -26,9 +26,10 @@ namespace gui_imp{
 
 	typedef std::map<diagram_port_win32*, Gdiplus::RectF> port_rect_map_t;
 
+	class diagram_impl_win32;
 	class diagram_node_win32 : public gui::diagram_node_base{
 	public:
-		diagram_node_win32(gui::diagram_impl_base *a_Parent, gui::diagram_node_base *a_Node) : m_Node(a_Node), gui::diagram_node_base(a_Parent) {}
+		diagram_node_win32(gui::diagram_impl_base *a_Parent, gui::diagram_node_base *a_Node);
 		void draw_node(Gdiplus::Graphics &g, diagram_colors &c, int x, int y, bool border = false);
 		std::pair<int, int> get_max_width_and_total_height(Gdiplus::Graphics &g, Gdiplus::Font &a_Font, Gdiplus::RectF &a_Layout, gui::port_type a_Type);
 
@@ -45,13 +46,14 @@ namespace gui_imp{
 		virtual void set_header_color(view::pixel_t a_Color) { m_Node->set_header_color(a_Color); }
 		virtual view::pixel_t get_header_color() const { return m_Node->get_header_color(); }
 
-		virtual void set_image(view::pixel_t *a_Pixel, int a_Width, int a_Height) { m_Node->set_image(a_Pixel, a_Width, a_Height); }
-		virtual view::pixel_t* get_image() const { return m_Node->get_image(); }
+		virtual void set_image(view::pixel_t *a_Pixel, int a_Width, int a_Height);
+		virtual view::pixel_t* get_image() const;
 
 		Gdiplus::RectF m_WorldBounds;
 		Gdiplus::PointF m_DistanceFromMouse;
 	private:
 		gui::diagram_node_base *m_Node;
+		diagram_impl_win32 *m_Win32Parent;
 	};
 
 	class diagram_factory_win32 : public gui::diagram_factory{
@@ -98,6 +100,7 @@ namespace gui_imp{
 	private:
 		HDC m_Hdc;
 		bool m_MovingSelection;
+		bool m_LeftButtonWasDown;
 
 		gui::diagram_serializer *m_Serializer;
 		diagram_port_win32 *m_BeginPort;

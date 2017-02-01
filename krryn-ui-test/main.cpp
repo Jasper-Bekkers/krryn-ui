@@ -16,7 +16,11 @@
 // tmp
 #include <windows.h>
 #include <gdiplus.h>
-#include <gl/gl.h>
+
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GL/wglew.h>
+
 
 // Dc.h & Dc.cpp can parse the property definition files (a la DDF)
 // those will need to be turned into "property sheets" and we will need some kind of content storage files
@@ -55,9 +59,11 @@ view::pixel_t* read(wchar_t *filename){
 
 void resize(gui::resize_args *a)
 {
-	m_Diagram->set_size(a->m_Width - 400, a->m_Height);
+	m_Diagram->set_size(a->m_Width - 400, a->m_Height / 2);
 	m_Props->set_pos(a->m_Width - 400, 0);
 	m_Props->set_size(400, a->m_Height);
+	m_OpenGL->set_size(a->m_Width - 400, a->m_Height / 2);
+	m_OpenGL->set_pos(0, a->m_Height / 2);
 }
 
 void selection(gui::selection_args *a)
@@ -87,6 +93,40 @@ void change(gui::event_args *e)
 	m_Label->set_text(m_Textbox->get_text());
 }
 
+
+void draw_to_node(gui::diagram_node_base* a_Node, int a_Width, int a_Height, view::pixel_t *a_Pixels, std::function<void()> a_Fn)
+{
+	GLuint texture, fbo;
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, a_Width, a_Height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE) 
+		__debugbreak();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	a_Fn();
+
+	glReadPixels(0, 0, a_Width, a_Height, GL_BGRA, GL_UNSIGNED_BYTE, a_Pixels);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteTextures(1, &texture);
+
+	a_Node->set_image(a_Pixels, a_Width, a_Height);
+}
 
 int main(int argc, char **argv)
 {
@@ -208,11 +248,44 @@ int main(int argc, char **argv)
 
 	m_Diagram->connect(k->get_id(), p->get_id());
 
-	delete w;
+	delete w; w = nullptr;
 
+	glewExperimental = GL_TRUE;
+
+	GLenum glew_err = glewInit();
+	if (glew_err != GLEW_OK)
+	{
+		auto errorStr = glewGetErrorString(glew_err);
+		printf("%s", errorStr);
+	}
+
+	////////////////
+
+	view::pixel_t *tmp = new view::pixel_t[64 * 64];
+
+	float r = 0, g = 0, b = 0, angle = 0;
 	while(true)
 	{
 		m_EventLoop.update();
+		
+		draw_to_node(h, 64, 64, tmp, [&]() {
+			glClearColor(0, 0, 0, 0);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glViewport(0, 0, 64, 64);
+
+			glRotatef(0.01 * 2 * 3.14, 0, 0, 1);
+			glBegin(GL_TRIANGLES);
+			glColor3f(r, g, b);
+			glVertex2f(-0.7, -0.5);
+			glVertex2f(0.7, -0.5);
+			glVertex2f(0, 0.7);
+			glEnd();
+		});
+		if (r < 1) r += 0.001;
+		else if (g < 1) g += 0.001;
+		else if (b < 1) b += 0.001;
+		else r = b = g = 0;
+		//angle += 0.0001;
 
 		glClearColor(1, 0, 1, 0);
 		glClear(GL_COLOR_BUFFER_BIT);

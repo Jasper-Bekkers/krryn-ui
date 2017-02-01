@@ -11,6 +11,7 @@ namespace gui_imp{
 		virtual void make(const gui::opengl_context_initializer &a_Initializer);
 
 		virtual void swap_buffers() override;
+		
 	private:
 		HDC m_hDC;
 		HGLRC m_hRC;

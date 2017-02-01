@@ -180,6 +180,22 @@ std::pair<int, int> diagram_node_win32::get_max_width_and_total_height(Graphics 
 	return std::make_pair(width, height);
 }
 
+diagram_node_win32::diagram_node_win32(gui::diagram_impl_base *a_Parent, gui::diagram_node_base *a_Node)
+	: m_Node(a_Node)
+	, gui::diagram_node_base(a_Parent)
+	, m_Win32Parent(dynamic_cast<diagram_impl_win32*>(a_Parent)){}
+
+void diagram_node_win32::set_image(view::pixel_t *a_Pixel, int a_Width, int a_Height)
+{
+	m_Node->set_image(a_Pixel, a_Width, a_Height);
+	InvalidateRect((HWND)m_Win32Parent->handle(), NULL, FALSE);
+}
+
+view::pixel_t* diagram_node_win32::get_image() const 
+{
+	return m_Node->get_image(); 
+}
+
 void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y, bool selected){
 	// make sure everything fits inside container
 	int arcSize = 19;
@@ -359,6 +375,7 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 #if 0 // Temp disabled due to bad perf, might be better to draw straigt into bitmap
 	Pen line(Color(132, 172, 217));
 	int l_StepSize = 25;
+
 	for(int x = 0; x < l_Size.m_Width; x += l_StepSize)
 	{
 		int xp = x + m_CenterX + m_DeltaX;
@@ -518,43 +535,35 @@ void diagram_impl_win32::find_node_or_port(REAL x, REAL y, diagram_node_win32 **
 
 void diagram_impl_win32::destroy_node(diagram_node_base* a_Node)
 {
-	for (auto it = m_Connections.begin(); it != m_Connections.end(); )
-	{
+	// remove all connections
+	for (auto it = m_Connections.begin(); it != m_Connections.end(); ) {
 		if (m_IdToNodes[it->m_PortA >> 16] == a_Node ||
-			m_IdToNodes[it->m_PortB >> 16] == a_Node)
-		{
+			m_IdToNodes[it->m_PortB >> 16] == a_Node) {
 			it = m_Connections.erase(it);
-		}
-		else
-		{
+		} else {
 			it++;
 		}
 	}
 
-	for (auto it = m_IdToNodes.begin(); it != m_IdToNodes.end(); )
-	{
-		if (it->second == a_Node)
-		{
+	// remove id mapping
+	for (auto it = m_IdToNodes.begin(); it != m_IdToNodes.end(); ) {
+		if (it->second == a_Node) {
 			it = m_IdToNodes.erase(it);
-		}
-		else
-		{
+		} else {
 			it++;
 		}
 	}
 
-	for (auto it = m_Nodes.begin(); it != m_Nodes.end();)
-	{
-		if (*it == a_Node)
-		{
+	// remove node
+	for (auto it = m_Nodes.begin(); it != m_Nodes.end();) {
+		if (*it == a_Node) {
 			it = m_Nodes.erase(it);
-		}
-		else
-		{
+		} else {
 			it++;
 		}
 	}
 
+	// typically called from node dtor, so no need to delete the node
 }
 
 
@@ -615,6 +624,7 @@ void diagram_impl_win32::deselect_node(diagram_node_base *a_Node){
 
 void diagram_impl_win32::wm_lbuttondown(WPARAM wParam, LPARAM lParam){
 	math::size l_Size = get_size();
+	m_LeftButtonWasDown = true;
 	m_MovingSelection = false; // Deselect when we click
 
 	REAL x = (REAL)GET_X_LPARAM(lParam);
@@ -674,6 +684,7 @@ void diagram_impl_win32::wm_mbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
 void diagram_impl_win32::wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
 	// deselect everything
 	m_MovingSelection = !m_MovingSelection;
+	m_LeftButtonWasDown = false;
 
 	store_relative_positions_selected(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
@@ -714,7 +725,7 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 					(int)(*i)->m_DistanceFromMouse.X + GET_X_LPARAM(lParam) - l_Size.m_X / 2 - m_CenterX - m_DeltaX, 
 					(int)(*i)->m_DistanceFromMouse.Y + GET_Y_LPARAM(lParam) - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
 			}
-		}else{
+		}else if(m_LeftButtonWasDown){
 			// extend selection rectangle
 			m_Selection.Width  = GET_X_LPARAM(lParam) - m_Selection.X;
 			m_Selection.Height = GET_Y_LPARAM(lParam) - m_Selection.Y;
@@ -723,6 +734,8 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 		// post WM_PAINT message
 		InvalidateRect(hWnd, NULL, TRUE);
 	}else if(m_BeginPort){
+		// we've selected a port, the bezier curves are drawn in the wm_paint handler
+		// so we only need to signal the invalidate
 		InvalidateRect(hWnd, NULL, TRUE);
 	}
 }
@@ -730,12 +743,12 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 LRESULT diagram_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	math::size l_Size = get_size();
 
-	if(uMsg == WM_PAINT){
+	if (uMsg == WM_ERASEBKGND) {
+		return 1;
+	}else if(uMsg == WM_PAINT){
 		wm_paint(hWnd);
 		return 0;
-	}
-	
-	if(uMsg == WM_MBUTTONDOWN){
+	}else if(uMsg == WM_MBUTTONDOWN){
 		wm_mbuttondown(wParam, lParam);
 		return 0;
 	}else if(uMsg == WM_MBUTTONUP){
