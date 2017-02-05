@@ -126,6 +126,8 @@ namespace gui_imp{
 		gui::diagram_id_t m_NodeIdCounter;
 		gui::diagram_factory *m_Factory;
 
+		Gdiplus::RectF get_clamped_selection_rect();
+
 		void deselect_all();
 		void select_node(gui::diagram_node_base *a_Node);
 		void deselect_node(gui::diagram_node_base *a_Node);

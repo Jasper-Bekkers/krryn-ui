@@ -287,6 +287,26 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	}
 }
 
+Gdiplus::RectF gui_imp::diagram_impl_win32::get_clamped_selection_rect()
+{
+	// Fix the selection bounding box
+	// because it can't handle negative Width/Heights
+
+	RectF l_Selection = m_Selection;
+
+	if (l_Selection.Width < 0) {
+		l_Selection.X += l_Selection.Width;
+		l_Selection.Width = abs(l_Selection.Width);
+	}
+
+	if (l_Selection.Height < 0) {
+		l_Selection.Y += l_Selection.Height;
+		l_Selection.Height = abs(l_Selection.Height);
+	}
+
+	return l_Selection;
+}
+
 void diagram_impl_win32::deselect_all(){
 	for(selection_t::iterator i = m_CurrentSelection.begin(); i != m_CurrentSelection.end(); i++){
 		(*i)->m_DistanceFromMouse.X = 0;
@@ -372,29 +392,6 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 	// set up drawing state
 	g.SetSmoothingMode(SmoothingModeAntiAlias);
 
-#if 0 // Temp disabled due to bad perf, might be better to draw straigt into bitmap
-	Pen line(Color(132, 172, 217));
-	int l_StepSize = 25;
-
-	for(int x = 0; x < l_Size.m_Width; x += l_StepSize)
-	{
-		int xp = x + m_CenterX + m_DeltaX;
-		if(xp >= l_Size.m_Width) xp %= l_Size.m_Width;
-		if(xp < 0) xp = xp + (l_Size.m_Width * (1 + (-xp / l_Size.m_Width)));
-
-		g.DrawLine(&line, xp, 0, xp, l_Size.m_Height);
-	}
-
-	for(int y = 0; y < l_Size.m_Height; y += l_StepSize)
-	{
-		int yp = y + m_CenterY + m_DeltaY;
-		if(yp >= l_Size.m_Height) yp %= l_Size.m_Height;
-		if(yp < 0) yp = yp + (l_Size.m_Height * (1 + (-yp / l_Size.m_Height)));
-
-		g.DrawLine(&line, 0, yp, l_Size.m_Width, yp);
-	}
-#endif
-
 	// Draw nodes
 	math::point l_Project(l_Size.m_X / 2 + m_CenterX + m_DeltaX,
 						  l_Size.m_Y / 2 + m_CenterY + m_DeltaY);
@@ -460,33 +457,10 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 
 		g.DrawBezier(&c.bezierPen, l_Points[0], l_Points[1], l_Points[2], l_Points[3]);
 	} else if(!m_MovingSelection){
-		// Fix the selection bounding box
-		// because it can't handle negative Width/Heights
-		RectF l_Selection = m_Selection;
-
-		if(l_Selection.Width < 0){
-			l_Selection.X += l_Selection.Width;
-			l_Selection.Width = abs(l_Selection.Width);
-		}
-	
-		if(l_Selection.Height < 0){
-			l_Selection.Y += l_Selection.Height;
-			l_Selection.Height = abs(l_Selection.Height);
-		}
+		RectF l_Selection = get_clamped_selection_rect();
 
 		g.FillRectangle(&c.selectionBackground, l_Selection);
 		g.DrawRectangle(&c.selectionBorder, l_Selection);
-
-		for(size_t i = 0; i < m_Nodes.size(); i++){
-			RectF l_ProjectedRect = m_Nodes[i]->m_WorldBounds;
-
-			// test the selection rectangle to see what's inside
-			if(l_Selection.IntersectsWith(l_ProjectedRect)){
-				select_node(m_Nodes[i]);
-			}else{
-				deselect_node(m_Nodes[i]);
-			}
-		}
 	}
 
 	BitBlt(hDC, l_Paint.rcPaint.left, l_Paint.rcPaint.top, l_Paint.rcPaint.right, l_Paint.rcPaint.bottom, hDCCompat, 0, 0, SRCCOPY);
@@ -642,7 +616,10 @@ void diagram_impl_win32::wm_lbuttondown(WPARAM wParam, LPARAM lParam){
 			m_BeginPort = 0;
 		}
 
-		if(l_Port && m_CurrentSelection.empty()){
+		// don't select the port when multiple nodes are selected
+		// so that we can easily grab the entire selection
+		if(l_Port && m_CurrentSelection.size() <= 1){
+
 			if(!m_BeginPort){
 				// We need to draw a bezier to the mouse cursor
 				m_BeginPort = l_Port;
@@ -720,15 +697,28 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 		SetCapture(hWnd);
 
 		if(m_MovingSelection){
-			for(selection_t::iterator i = m_CurrentSelection.begin(); i != m_CurrentSelection.end(); i++){
-				(*i)->move_to(
-					(int)(*i)->m_DistanceFromMouse.X + GET_X_LPARAM(lParam) - l_Size.m_X / 2 - m_CenterX - m_DeltaX, 
-					(int)(*i)->m_DistanceFromMouse.Y + GET_Y_LPARAM(lParam) - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
+			if (!m_BeginPort) { // make sure we're not holding a port when moving the nodes
+				for (selection_t::iterator i = m_CurrentSelection.begin(); i != m_CurrentSelection.end(); i++) {
+					(*i)->move_to(
+						(int)(*i)->m_DistanceFromMouse.X + GET_X_LPARAM(lParam) - l_Size.m_X / 2 - m_CenterX - m_DeltaX,
+						(int)(*i)->m_DistanceFromMouse.Y + GET_Y_LPARAM(lParam) - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
+				}
 			}
 		}else if(m_LeftButtonWasDown){
 			// extend selection rectangle
 			m_Selection.Width  = GET_X_LPARAM(lParam) - m_Selection.X;
 			m_Selection.Height = GET_Y_LPARAM(lParam) - m_Selection.Y;
+
+			RectF l_Selection = get_clamped_selection_rect();
+
+			for (size_t i = 0; i < m_Nodes.size(); i++) {
+				RectF l_ProjectedRect = m_Nodes[i]->m_WorldBounds;
+
+				// test the selection rectangle to see what's inside
+				if (l_Selection.IntersectsWith(l_ProjectedRect)) {
+					select_node(m_Nodes[i]);
+				}
+			}
 		}
 
 		// post WM_PAINT message
