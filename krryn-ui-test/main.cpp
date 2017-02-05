@@ -141,14 +141,12 @@ int main(int argc, char **argv)
 		.top(0)
 		.left(0)
 		.parent(m_Window)
-		.add("Panel 1")
-		.add("Panel 2")
 	.create();
 
 	tab_panel *l_Panel = m_Tabs->named_panel("Test 1");
 	tab_panel *l_Panel2 = m_Tabs->named_panel("Other");
 	//tab_panel *l_Panel3 = m_Tabs->named_panel("Test propgrid");
-	//tab_panel *l_Panel4 = m_Tabs->named_panel("Code");
+//	tab_panel *l_Panel4 = m_Tabs->named_panel("Code");
 
 
 	m_Diagram = diagram::with()
