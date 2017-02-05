@@ -35,8 +35,6 @@ namespace gui{
 	public:
 		tabs_initializer();
 
-		tabs_initializer &add(const std::string &a_Text);
-
 		tabs* create();
 	private:
 		std::string m_Text;

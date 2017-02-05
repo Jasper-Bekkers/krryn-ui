@@ -39,10 +39,6 @@ tabs_initializer::tabs_initializer(){
 	height(100);
 }
 
-tabs_initializer &tabs_initializer::add(const std::string &a_Text){
-	return *this;
-}
-
 tabs* tabs_initializer::create(){
 	return new tabs(*this);
 }
