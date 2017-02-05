@@ -332,23 +332,32 @@ LRESULT tabs_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 			return 0;
 		}else if(uMsg == WM_LBUTTONDOWN){
 			unsigned int oldActive = m_ActiveTab;
-
-			for(visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++){
+			bool clickedAny = false;
+			for (visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++) {
 				bool inside = !!i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				bool close = !!i->second.m_CloseBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				if (inside) 
+					clickedAny = true;
+			}
 
-				if(close){
-					remove_child(i->first);
-					::InvalidateRect(m_hWndTabs, NULL, TRUE);
-					::InvalidateRgn(m_hWnd, NULL, TRUE);
+			if (clickedAny) {
+				for (visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++) {
+					bool inside = !!i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+					bool close = !!i->second.m_CloseBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
-					// remove_child invalidates m_VisibleTabs iterator
-					break;
-				}else{
-					get_child(i->first).set_visible(inside);
+					if (close) {
+						remove_child(i->first);
+						::InvalidateRect(m_hWndTabs, NULL, TRUE);
+						::InvalidateRgn(m_hWnd, NULL, TRUE);
 
-					if(inside){
-						m_ActiveTab = i->first;
+						// remove_child invalidates m_VisibleTabs iterator
+						break;
+					}
+					else {
+						get_child(i->first).set_visible(inside);
+
+						if (inside) {
+							m_ActiveTab = i->first;
+						}
 					}
 				}
 			}
