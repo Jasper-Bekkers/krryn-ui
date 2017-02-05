@@ -131,6 +131,9 @@ void diagram_impl_win32::make(const diagram_initializer &a_Initializer){
 	m_NodeIdCounter = 0;
 	m_BeginPort = 0;
 
+	m_ScaleX = 1.0;
+	m_ScaleY = 1.0;
+
 	m_Colors = new diagram_colors;
 
 	m_Factory = new diagram_factory_win32(
@@ -287,7 +290,7 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	}
 }
 
-Gdiplus::RectF gui_imp::diagram_impl_win32::get_clamped_selection_rect()
+Gdiplus::RectF gui_imp::diagram_impl_win32::get_clamped_scaled_selection_rect()
 {
 	// Fix the selection bounding box
 	// because it can't handle negative Width/Heights
@@ -303,6 +306,14 @@ Gdiplus::RectF gui_imp::diagram_impl_win32::get_clamped_selection_rect()
 		l_Selection.Y += l_Selection.Height;
 		l_Selection.Height = abs(l_Selection.Height);
 	}
+
+	l_Selection.X /= m_ScaleX;
+	l_Selection.Y /= m_ScaleY;
+	l_Selection.Width /= m_ScaleX;
+	l_Selection.Height /= m_ScaleY;
+
+	l_Selection.X -= m_CenterX;
+	l_Selection.Y -= m_CenterY;
 
 	return l_Selection;
 }
@@ -326,13 +337,13 @@ diagram_node_base *diagram_impl_win32::get_node(size_t i){
 	return m_Nodes[i];
 }
 
-void diagram_impl_win32::store_relative_positions_selected(int x, int y){
+void diagram_impl_win32::store_relative_positions_selected(float x, float y){
 	math::size l_Size = get_size();
 
 	// calculate distance from mouse pointer
 	// so we can use this to keep the nodes positioned relative to each other
-	REAL l_MouseWorldX = ((Gdiplus::REAL)x - l_Size.m_X / 2 - m_CenterX - m_DeltaX);
-	REAL l_MouseWorldY = ((Gdiplus::REAL)y - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
+	REAL l_MouseWorldX = (x - l_Size.m_X / 2 - m_CenterX - m_DeltaX);
+	REAL l_MouseWorldY = (y - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
 
 	for(selection_t::iterator i = m_CurrentSelection.begin(); i != m_CurrentSelection.end(); i++){
 		(*i)->m_DistanceFromMouse.X = (*i)->get_position().m_X - l_MouseWorldX;
@@ -391,10 +402,12 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 	
 	// set up drawing state
 	g.SetSmoothingMode(SmoothingModeAntiAlias);
+	g.ScaleTransform(m_ScaleX, m_ScaleY, Gdiplus::MatrixOrderAppend);
+	g.TranslateTransform(m_CenterX, m_CenterY);
 
 	// Draw nodes
-	math::point l_Project(l_Size.m_X / 2 + m_CenterX + m_DeltaX,
-						  l_Size.m_Y / 2 + m_CenterY + m_DeltaY);
+	math::point l_Project(l_Size.m_X / 2 + m_DeltaX,
+						  l_Size.m_Y / 2 + m_DeltaY);
 
 	// draw in reverse order so clicks register on the right node
 	for(int i = m_Nodes.size() - 1; i >= 0; i--){
@@ -440,6 +453,9 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 	}
 
 	if(m_BeginPort){
+		int x = m_MouseX - m_CenterX;
+		int y = m_MouseY - m_CenterY;
+
 		Point l_Points[] = {
 			Point(
 				m_BeginPort->m_BulletCenter.X,
@@ -448,16 +464,14 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 				m_BeginPort->m_BulletCenter.X + (m_BeginPort->get_type() == gui::in ? -100 : 100),
 				m_BeginPort->m_BulletCenter.Y),
 			Point(
-				m_MouseX + (m_MouseX > m_BeginPort->m_BulletCenter.X ? -100 : 100), 
-				m_MouseY),
-			Point(
-				m_MouseX, 
-				m_MouseY),
+				x + (x > m_BeginPort->m_BulletCenter.X ? -100 : 100), 
+				y),
+			Point(x, y),
 		};
 
 		g.DrawBezier(&c.bezierPen, l_Points[0], l_Points[1], l_Points[2], l_Points[3]);
 	} else if(!m_MovingSelection){
-		RectF l_Selection = get_clamped_selection_rect();
+		RectF l_Selection = get_clamped_scaled_selection_rect();
 
 		g.FillRectangle(&c.selectionBackground, l_Selection);
 		g.DrawRectangle(&c.selectionBorder, l_Selection);
@@ -507,8 +521,7 @@ void diagram_impl_win32::find_node_or_port(REAL x, REAL y, diagram_node_win32 **
 	}
 }
 
-void diagram_impl_win32::destroy_node(diagram_node_base* a_Node)
-{
+void diagram_impl_win32::destroy_node(diagram_node_base* a_Node){
 	// remove all connections
 	for (auto it = m_Connections.begin(); it != m_Connections.end(); ) {
 		if (m_IdToNodes[it->m_PortA >> 16] == a_Node ||
@@ -565,16 +578,6 @@ bool diagram_impl_win32::connect(diagram_id_t a_FullPortIdA, diagram_id_t a_Full
 	return true;
 }
 
-void diagram_impl_win32::wm_mbuttondown(WPARAM wParam, LPARAM lParam){
-	// set up panning variables
-	math::size l_Size = get_size();
-
-	m_PanStartX = GET_X_LPARAM(lParam) - l_Size.m_X / 2;
-	m_PanStartY = GET_Y_LPARAM(lParam) - l_Size.m_Y / 2;
-	m_DeltaX = 0;
-	m_DeltaY = 0;
-}
-
 void diagram_impl_win32::select_node(diagram_node_base *a_Node){
 	m_CurrentSelection.insert((diagram_node_win32*)a_Node);
 	m_SelectionChanged = true;
@@ -596,13 +599,34 @@ void diagram_impl_win32::deselect_node(diagram_node_base *a_Node){
 	m_SelectionChanged = true;
 }
 
+void diagram_impl_win32::wm_mbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam) {
+	// reset and commit pan control
+	m_CenterX += m_DeltaX;
+	m_CenterY += m_DeltaY;
+	m_DeltaX = 0;
+	m_DeltaY = 0;
+}
+
+void diagram_impl_win32::wm_mbuttondown(WPARAM wParam, LPARAM lParam) {
+	// set up panning variables
+	math::size l_Size = get_size();
+
+	m_PanStartX = GET_X_LPARAM(lParam) / m_ScaleX - l_Size.m_X / 2;
+	m_PanStartY = GET_Y_LPARAM(lParam) / m_ScaleY - l_Size.m_Y / 2;
+	m_DeltaX = 0;
+	m_DeltaY = 0;
+}
+
 void diagram_impl_win32::wm_lbuttondown(WPARAM wParam, LPARAM lParam){
 	math::size l_Size = get_size();
 	m_LeftButtonWasDown = true;
 	m_MovingSelection = false; // Deselect when we click
 
-	REAL x = (REAL)GET_X_LPARAM(lParam);
-	REAL y = (REAL)GET_Y_LPARAM(lParam);
+	REAL x = (REAL)GET_X_LPARAM(lParam) / m_ScaleX;
+	REAL y = (REAL)GET_Y_LPARAM(lParam) / m_ScaleY;
+
+	x -= m_CenterX;
+	y -= m_CenterY;
 
 	diagram_node_win32 *l_Node = 0;
 	diagram_port_win32 *l_Port = 0;
@@ -640,22 +664,14 @@ void diagram_impl_win32::wm_lbuttondown(WPARAM wParam, LPARAM lParam){
 		m_MovingSelection = l_Port || l_Node;
 	}
 
-	store_relative_positions_selected((int)x, (int)y);
+	store_relative_positions_selected(x, y);
 
 	if(!m_MovingSelection && !l_Port){
-		m_Selection.X = x;
-		m_Selection.Y = y;
+		m_Selection.X = (x + m_CenterX) * m_ScaleX;
+		m_Selection.Y = (y + m_CenterY) * m_ScaleY;
 
 		deselect_all();
 	}
-}
-
-void diagram_impl_win32::wm_mbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
-	// reset and commit pan control
-	m_CenterX += m_DeltaX;
-	m_CenterY += m_DeltaY;
-	m_DeltaX = 0;
-	m_DeltaY = 0;
 }
 
 void diagram_impl_win32::wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
@@ -663,7 +679,10 @@ void diagram_impl_win32::wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
 	m_MovingSelection = !m_MovingSelection;
 	m_LeftButtonWasDown = false;
 
-	store_relative_positions_selected(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	REAL x = (REAL)GET_X_LPARAM(lParam) / m_ScaleX;
+	REAL y = (REAL)GET_Y_LPARAM(lParam) / m_ScaleY;
+
+	store_relative_positions_selected(x, y);
 
 	if(m_SelectionChanged){
 		selection_args l_Args;
@@ -682,15 +701,15 @@ void diagram_impl_win32::wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
 void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 	math::size l_Size = get_size();
 
-	m_MouseX = GET_X_LPARAM(lParam);
-	m_MouseY = GET_Y_LPARAM(lParam);
-
+	m_MouseX = GET_X_LPARAM(lParam) / m_ScaleX;
+	m_MouseY = GET_Y_LPARAM(lParam) / m_ScaleY;
+	
 	if(wParam & MK_MBUTTON){
 		SetCapture(hWnd);
 
 		// pan the window
-		m_DeltaX = GET_X_LPARAM(lParam) - l_Size.m_X / 2 - m_PanStartX;
-		m_DeltaY = GET_Y_LPARAM(lParam) - l_Size.m_Y / 2 - m_PanStartY;
+		m_DeltaX = m_MouseX - l_Size.m_X / 2 - m_PanStartX;
+		m_DeltaY = m_MouseY - l_Size.m_Y / 2 - m_PanStartY;
 		InvalidateRect(hWnd, NULL, TRUE);
 	}else if(wParam & MK_LBUTTON){
 		// capture mouse so the selection rect can extend outside of the window
@@ -700,8 +719,8 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 			if (!m_BeginPort) { // make sure we're not holding a port when moving the nodes
 				for (selection_t::iterator i = m_CurrentSelection.begin(); i != m_CurrentSelection.end(); i++) {
 					(*i)->move_to(
-						(int)(*i)->m_DistanceFromMouse.X + GET_X_LPARAM(lParam) - l_Size.m_X / 2 - m_CenterX - m_DeltaX,
-						(int)(*i)->m_DistanceFromMouse.Y + GET_Y_LPARAM(lParam) - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
+						(int)(*i)->m_DistanceFromMouse.X + m_MouseX - m_CenterX - l_Size.m_X / 2 - m_CenterX - m_DeltaX,
+						(int)(*i)->m_DistanceFromMouse.Y + m_MouseY - m_CenterY - l_Size.m_Y / 2 - m_CenterY - m_DeltaY);
 				}
 			}
 		}else if(m_LeftButtonWasDown){
@@ -709,7 +728,7 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 			m_Selection.Width  = GET_X_LPARAM(lParam) - m_Selection.X;
 			m_Selection.Height = GET_Y_LPARAM(lParam) - m_Selection.Y;
 
-			RectF l_Selection = get_clamped_selection_rect();
+			RectF l_Selection = get_clamped_scaled_selection_rect();
 
 			for (size_t i = 0; i < m_Nodes.size(); i++) {
 				RectF l_ProjectedRect = m_Nodes[i]->m_WorldBounds;
@@ -728,6 +747,21 @@ void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 		// so we only need to signal the invalidate
 		InvalidateRect(hWnd, NULL, TRUE);
 	}
+}
+void diagram_impl_win32::wm_mousewheel(HWND hWnd, WPARAM wParam, LPARAM lParam) {
+	float zDelta = (float)GET_WHEEL_DELTA_WPARAM(wParam);
+	zDelta /= WHEEL_DELTA;
+
+	m_ScaleX += zDelta * 0.1;
+	m_ScaleY += zDelta * 0.1;
+
+	if (m_ScaleX < 0.3) m_ScaleX = 0.3;
+	if (m_ScaleY < 0.3) m_ScaleY = 0.3;
+
+	if (m_ScaleX > 3) m_ScaleX = 3;
+	if (m_ScaleY > 3) m_ScaleY = 3;
+
+	InvalidateRect(hWnd, NULL, TRUE);
 }
 
 LRESULT diagram_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
@@ -752,6 +786,9 @@ LRESULT diagram_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam,
 		return 0;
 	}else if(uMsg == WM_MOUSEMOVE){
 		wm_mousemove(hWnd, wParam, lParam);
+		return 0;
+	}else if(uMsg == WM_MOUSEWHEEL){
+		wm_mousewheel(hWnd, wParam, lParam);
 		return 0;
 	}else{
 		return widget_win32::process_message(hWnd, uMsg, wParam, lParam);

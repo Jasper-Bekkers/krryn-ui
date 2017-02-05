@@ -126,13 +126,15 @@ namespace gui_imp{
 		gui::diagram_id_t m_NodeIdCounter;
 		gui::diagram_factory *m_Factory;
 
-		Gdiplus::RectF get_clamped_selection_rect();
+		float m_ScaleX, m_ScaleY;
+
+		Gdiplus::RectF get_clamped_scaled_selection_rect();
 
 		void deselect_all();
 		void select_node(gui::diagram_node_base *a_Node);
 		void deselect_node(gui::diagram_node_base *a_Node);
 
-		void store_relative_positions_selected(int x, int y);
+		void store_relative_positions_selected(float x, float y);
 		void find_node_or_port(Gdiplus::REAL x, Gdiplus::REAL y, diagram_node_win32 **a_Node, diagram_port_win32 **a_Port);
 
 		void wm_paint(HWND hWnd);
@@ -141,6 +143,7 @@ namespace gui_imp{
 		void wm_lbuttondown(WPARAM wParam, LPARAM lParam);
 		void wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam);
 		void wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam);
+		void wm_mousewheel(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	};
 }
 
