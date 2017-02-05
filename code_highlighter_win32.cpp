@@ -55,7 +55,7 @@ void code_highlighter_impl_win32::make(const code_highlighter_initializer &a_Ini
 		handle = LoadLibrary(TEXT("..\\scintilla\\scintilla.dll"));
 
 		if(!handle){
-			std::runtime_error("Can't load scintilla.dll!");
+			throw std::runtime_error("Can't load scintilla.dll!");
 		}
 	}
 
