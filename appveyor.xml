@@ -1,0 +1,65 @@
+version: 1.x.{build}-{branch}
+skip_tags: true
+shallow_clone: true
+cache:
+  - C:\projects\dependencies\libs -> appveyor.yml
+os: Visual Studio 2015
+platform:
+  - x86
+  - x64
+configuration:
+#  - Debug
+  - Release
+environment:
+  CONFIGURATION_COMPLETE: False
+  matrix:
+    - CMAKE_GENERATOR: Visual Studio 14 2015
+      VISUAL_STUDIO_INTERNAL_VERSION: 140
+      VISUAL_STUDIO_VERSION: 14.0
+
+init:
+  - ps: |
+      # Determine the platform and create associate environment variables
+      If ($env:Platform -Match "x86") {
+        $env:ARCHITECTURE="32"
+      } Else {
+        $env:ARCHITECTURE="64"
+        $env:CMAKE_GENERATOR_SUFFIX=" Win64"
+      }
+      
+install:
+  - ps: |
+
+before_build:
+  - ps: |
+      # Create and navigate to the build directory (build outside tree)
+      New-Item -ItemType Directory -Force -Path build
+      Push-Location build
+
+      # Configure the build via CMake
+      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)"
+
+      # Move back to working directory
+      Pop-Location
+
+build_script:
+  - ps: $env:CONFIGURATION_COMPLETE=$TRUE
+  - ps: cmake --build build
+
+after_build:
+  - ps: |
+      
+
+on_failure:
+  - ps: |
+      # Write the CMake output and error logs to the console
+      If ($env:CONFIGURATION_COMPLETE -eq "False") {
+        If (Test-Path build/CMakeFiles/CMakeOutput.log) {
+          Write-Output "CMakeOutput.log"
+          cat build/CMakeFiles/CMakeOutput.log
+        }
+        If (Test-Path builds/CMakeFiles/CMakeError.log) {
+          Write-Output "CMakeError.log"
+          cat build/CMakeFiles/CMakeError.log
+        }
+      }
