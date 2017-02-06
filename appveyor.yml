@@ -37,7 +37,7 @@ before_build:
       Push-Location build
 
       # Configure the build via CMake
-      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)"
+      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" ..
 
       # Move back to working directory
       Pop-Location
