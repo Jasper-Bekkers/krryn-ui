@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/cn7tq6y43u3xbj28?svg=true)](https://ci.appveyor.com/project/Jasper-Bekkers/krryn-ui-rieqc)
+
 krryn-ui
 ========
 
