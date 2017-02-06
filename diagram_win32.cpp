@@ -430,7 +430,7 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 	// set up drawing state
 	g.SetSmoothingMode(SmoothingModeAntiAlias);
 	g.ScaleTransform(m_ScaleX, m_ScaleY, Gdiplus::MatrixOrderAppend);
-	g.TranslateTransform(m_CenterX, m_CenterY);
+	g.TranslateTransform((Gdiplus::REAL)m_CenterX, (Gdiplus::REAL)m_CenterY);
 
 	// Draw nodes
 	math::point l_Project(l_Size.m_X / 2 + m_DeltaX,
@@ -485,14 +485,14 @@ void diagram_impl_win32::wm_paint(HWND hWnd){
 
 		Point l_Points[] = {
 			Point(
-				m_BeginPort->m_BulletCenter.X,
-				m_BeginPort->m_BulletCenter.Y),
+				(INT)(m_BeginPort->m_BulletCenter.X),
+				(INT)(m_BeginPort->m_BulletCenter.Y)),
 			Point(
-				m_BeginPort->m_BulletCenter.X + (m_BeginPort->get_type() == gui::in ? -100 : 100),
-				m_BeginPort->m_BulletCenter.Y),
+				(INT)(m_BeginPort->m_BulletCenter.X + (m_BeginPort->get_type() == gui::in ? -100 : 100)),
+				(INT)(m_BeginPort->m_BulletCenter.Y)),
 			Point(
-				x + (x > m_BeginPort->m_BulletCenter.X ? -100 : 100), 
-				y),
+				(INT)(x + (x > m_BeginPort->m_BulletCenter.X ? -100 : 100)), 
+				(INT)(y)),
 			Point(x, y),
 		};
 
@@ -643,8 +643,8 @@ void diagram_impl_win32::wm_mbuttondown(WPARAM wParam, LPARAM lParam) {
 	// set up panning variables
 	math::size l_Size = get_size();
 
-	m_PanStartX = GET_X_LPARAM(lParam) / m_ScaleX - l_Size.m_X / 2;
-	m_PanStartY = GET_Y_LPARAM(lParam) / m_ScaleY - l_Size.m_Y / 2;
+	m_PanStartX = int(GET_X_LPARAM(lParam) / m_ScaleX - l_Size.m_X / 2);
+	m_PanStartY = int(GET_Y_LPARAM(lParam) / m_ScaleY - l_Size.m_Y / 2);
 	m_DeltaX = 0;
 	m_DeltaY = 0;
 }
@@ -733,8 +733,8 @@ void diagram_impl_win32::wm_lbuttonup(HWND hWnd, WPARAM wParam, LPARAM lParam){
 void diagram_impl_win32::wm_mousemove(HWND hWnd, WPARAM wParam, LPARAM lParam){
 	math::size l_Size = get_size();
 
-	m_MouseX = GET_X_LPARAM(lParam) / m_ScaleX;
-	m_MouseY = GET_Y_LPARAM(lParam) / m_ScaleY;
+	m_MouseX = int(GET_X_LPARAM(lParam) / m_ScaleX);
+	m_MouseY = int(GET_Y_LPARAM(lParam) / m_ScaleY);
 	
 	if(wParam & MK_MBUTTON){
 		SetCapture(hWnd);
@@ -784,14 +784,14 @@ void diagram_impl_win32::wm_mousewheel(HWND hWnd, WPARAM wParam, LPARAM lParam) 
 	float zDelta = (float)GET_WHEEL_DELTA_WPARAM(wParam);
 	zDelta /= WHEEL_DELTA;
 
-	m_ScaleX += zDelta * 0.1;
-	m_ScaleY += zDelta * 0.1;
+	m_ScaleX += zDelta * 0.1f;
+	m_ScaleY += zDelta * 0.1f;
 
-	if (m_ScaleX < 0.3) m_ScaleX = 0.3;
-	if (m_ScaleY < 0.3) m_ScaleY = 0.3;
+	if (m_ScaleX < 0.3f) m_ScaleX = 0.3f;
+	if (m_ScaleY < 0.3f) m_ScaleY = 0.3f;
 
-	if (m_ScaleX > 3) m_ScaleX = 3;
-	if (m_ScaleY > 3) m_ScaleY = 3;
+	if (m_ScaleX > 3.0f) m_ScaleX = 3.0f;
+	if (m_ScaleY > 3.0f) m_ScaleY = 3.0f;
 
 	InvalidateRect(hWnd, NULL, TRUE);
 }

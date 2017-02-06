@@ -2,7 +2,16 @@ cmake_minimum_required(VERSION 3.1)
 
 project(krryn)
 
+add_definitions(/W4 /WX)
+
+# 'class1' : inherits 'class2::member' via dominance
 add_definitions(/wd4250)
+
+# 'unreferenced formal parameter'
+add_definitions(/wd4100) 
+
+# nonstandard extension used: nameless struct/union
+add_definitions(/wd4201)
 
 include_directories(
 	"scintilla/include"

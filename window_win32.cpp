@@ -15,18 +15,19 @@ void window_impl_win32::make(const gui::window_initializer &a_Initializer){
 	DWORD l_Style = WS_BORDER | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX | WS_SYSMENU;
 
 	RECT l_WindowRect = widget_helper_win32::get_window_rect(a_Initializer);
-	RECT l_AdjustedRect = {0, 0, a_Initializer.get_width(), a_Initializer.get_height()};
+	RECT l_AdjustedRect = {0, 0, (LONG)a_Initializer.get_width(), (LONG)a_Initializer.get_height()};
 	AdjustWindowRectEx(&l_AdjustedRect, l_Style, FALSE, l_ExtraStyle);
 
-	if (!(m_hWnd = CreateWindowEx(
-		l_ExtraStyle, widget_helper_win32::window_class(), 
-		a_Initializer.get_title().c_str(), 
-		l_Style | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 
+	m_hWnd = CreateWindowEx(
+		l_ExtraStyle, widget_helper_win32::window_class(),
+		a_Initializer.get_title().c_str(),
+		l_Style | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
 		l_WindowRect.left, l_WindowRect.top,
 		l_AdjustedRect.right,
-		l_AdjustedRect.bottom, 
-		NULL, NULL, NULL, NULL))){
+		l_AdjustedRect.bottom,
+		NULL, NULL, NULL, NULL);
 
+	if (!m_hWnd){
 		throw widget_exception("Failed to create window");
 	}
 

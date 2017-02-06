@@ -90,18 +90,18 @@ void code_highlighter_impl_win32::make(const code_highlighter_initializer &a_Ini
 	set_style(STYLE_DEFAULT, black, white, 9, "Courier New");
 	send(SCI_STYLECLEARALL);
 
-	set_style(SCE_C_DEFAULT, black);
-	set_style(SCE_C_COMMENTLINE, comment);
-	set_style(SCE_C_NUMBER, number);
-	set_style(SCE_C_STRING, string);
-	set_style(SCE_C_CHARACTER, string);
-	set_style(SCE_C_WORD, keyword);
-	set_style(SCE_C_OPERATOR, black);
+	set_style(SCE_C_DEFAULT, black, white);
+	set_style(SCE_C_COMMENTLINE, comment, white);
+	set_style(SCE_C_NUMBER, number, white);
+	set_style(SCE_C_STRING, string, white);
+	set_style(SCE_C_CHARACTER, string, white);
+	set_style(SCE_C_WORD, keyword, white);
+	set_style(SCE_C_OPERATOR, black, white);
 	send(SCI_STYLESETBOLD, SCE_C_OPERATOR, 1);
-	set_style(SCE_C_IDENTIFIER, black);
-	set_style(SCE_C_STRINGEOL, string);
+	set_style(SCE_C_IDENTIFIER, black, white);
+	set_style(SCE_C_STRINGEOL, string, white);
 
-	set_style(SCE_C_WORD2, function);
+	set_style(SCE_C_WORD2, function, white);
 	send(SCI_STYLESETBOLD, SCE_C_WORD2, 1);
 
 	// show line numbers in margin

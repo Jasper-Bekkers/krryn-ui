@@ -2,7 +2,12 @@
 #define _WIN32_WINNT 0x501
 #include <windows.h>
 #include <windowsx.h>
+
+#pragma warning(push)
+#pragma warning(disable:4458)
 #include <gdiplus.h>
+#pragma warning(pop)
+
 #undef _WIN32_WINNT
 #include "widget_impl_base.h"
 

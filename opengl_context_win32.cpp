@@ -19,12 +19,18 @@ void opengl_context_impl_win32::make(const opengl_context_initializer &a_Initial
 		widget_helper_win32::create_window(a_Initializer, m_hWnd, m_hDC);
 	}
 
-	static PIXELFORMATDESCRIPTOR l_Pfd = { sizeof(PIXELFORMATDESCRIPTOR), 1,
-		PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER,
-		PFD_TYPE_RGBA, a_Initializer.get_bits_per_pixel(), 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 16, 0, 0, PFD_MAIN_PLANE, 0, 0, 0, 0 };
+	PIXELFORMATDESCRIPTOR l_Pfd = { sizeof(PIXELFORMATDESCRIPTOR) };
 
-	if (!(l_PixelFormat = ChoosePixelFormat(m_hDC, &l_Pfd))) {
+	l_Pfd.nVersion = 1;
+	l_Pfd.dwFlags = PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER;
+	l_Pfd.iPixelType = PFD_TYPE_RGBA;
+	l_Pfd.cColorBits = (BYTE)a_Initializer.get_bits_per_pixel();
+	l_Pfd.cDepthBits = 16;
+	l_Pfd.dwLayerMask = PFD_MAIN_PLANE;
+
+	l_PixelFormat = ChoosePixelFormat(m_hDC, &l_Pfd);
+
+	if (!l_PixelFormat) {
 		throw widget_exception("No matching pixel format descriptor");
 	}
 
@@ -32,9 +38,9 @@ void opengl_context_impl_win32::make(const opengl_context_initializer &a_Initial
 		throw widget_exception("Can't set the pixel format");
 	}
 
-	if (!(m_hRC = wglCreateContext(m_hDC))) {
+	m_hRC = wglCreateContext(m_hDC);
+	if (!m_hRC) {
 		throw widget_exception("Can't create rendering context");
-		return;
 	}
 
 	if (!wglMakeCurrent(m_hDC, m_hRC)) {

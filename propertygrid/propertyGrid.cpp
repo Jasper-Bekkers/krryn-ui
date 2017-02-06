@@ -381,6 +381,7 @@ static VOID DeleteItem(LPLISTBOXITEM lpItem)
 /// @returns VOID.
 static VOID Grid_OnDeleteItem(HWND hwnd, const DELETEITEMSTRUCT * lpDeleteItem)
 {
+	(void)hwnd;
     if (g_lpInst->hwndListMap == lpDeleteItem->hwndItem)
         DeleteItem((LPLISTBOXITEM)lpDeleteItem->itemData);
 
@@ -981,11 +982,11 @@ static LRESULT CALLBACK IpEdit_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         if (NULL != g_lpInst->lpCurrent)
         {
             BYTE ip[4];
-            TCHAR buf[MAX_PATH];
+            TCHAR buf1[MAX_PATH];
             if (4 == SNDMSG(hIpEdit, IPM_GETADDRESS, 0, (LPARAM) & *((LPDWORD)ip)))
             {
-                _stprintf_s(buf, MAX_PATH, _T("%d.%d.%d.%d"), ip[3], ip[2], ip[1], ip[0]);
-                AllocatedString_Replace(g_lpInst->lpCurrent->lpszCurValue, buf);
+                _stprintf_s(buf1, MAX_PATH, _T("%d.%d.%d.%d"), ip[3], ip[2], ip[1], ip[0]);
+                AllocatedString_Replace(g_lpInst->lpCurrent->lpszCurValue, buf1);
             }
         }
         ShowWindow(hIpEdit, SW_HIDE);
@@ -1786,7 +1787,6 @@ static LPTSTR FileDialogItem_ToString(LPPROPGRIDFDITEM lpPgFdItem)
         ps += iLen;
         *ps++ = _T('\t');
     }
-  EXIT_FOR:
 
     _stprintf_s(szBuf, NELEMS(szBuf),
 #ifdef _UNICODE
@@ -3098,7 +3098,7 @@ static HBRUSH Grid_OnCtlColorListbox(HWND hwnd, HDC hdc, HWND hwndChild, INT typ
 ///
 /// @returns HBRUSH The handle of the brush used to paint the
 ///                  static's background.
-static HBRUSH Grid_OnCtlColorStatic(HWND hwnd, HDC hdc, HWND hwndChild, INT type)
+static HBRUSH Grid_OnCtlColorStatic(HWND hwnd, HDC hdc_, HWND hwndChild, INT type)
 {
     //DWM 1.3: Keep the area between the description and the list refreshed
     if (NULL != g_lpInst->hwndPropDesc)
@@ -3111,7 +3111,7 @@ static HBRUSH Grid_OnCtlColorStatic(HWND hwnd, HDC hdc, HWND hwndChild, INT type
         FillSolidRect(hdc, &r,GetSysColor(COLOR_BTNFACE));
         ReleaseDC(hwnd,hdc);
     } 
-    return FORWARD_WM_CTLCOLORSTATIC(hwnd, hdc, hwndChild, DefWindowProc);
+    return FORWARD_WM_CTLCOLORSTATIC(hwnd, hdc_, hwndChild, DefWindowProc);
 }
 
 /// @brief Handles WM_MEASUREITEM message sent to the grid when the owner-drawn

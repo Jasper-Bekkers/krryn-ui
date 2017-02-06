@@ -15,7 +15,11 @@
 
 // tmp
 #include <windows.h>
+
+#pragma warning(push)
+#pragma warning(disable:4458)
 #include <gdiplus.h>
+#pragma warning(pop)
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -68,7 +72,7 @@ void resize(gui::resize_args *a)
 
 void selection(gui::selection_args *a)
 {
-	for(int i = 0; i < a->m_SelectedNodes.size(); i++){
+	for(size_t i = 0; i < a->m_SelectedNodes.size(); i++){
 		void *data = a->m_SelectedNodes[i]->m_UserData;
 		if(data){
 			std::string &l_Str = *(std::string*)data;
@@ -261,7 +265,7 @@ int main(int argc, char **argv)
 
 	view::pixel_t *tmp = new view::pixel_t[64 * 64];
 
-	float r = 0, g = 0, b = 0, angle = 0;
+	float r = 0, g = 0, b = 0;
 	while(true)
 	{
 		m_EventLoop.update();
@@ -271,17 +275,17 @@ int main(int argc, char **argv)
 			glClear(GL_COLOR_BUFFER_BIT);
 			glViewport(0, 0, 64, 64);
 
-			glRotatef(0.01 * 2 * 3.14, 0, 0, 1);
+			glRotatef(0.01f * 2 * 3.14f, 0, 0, 1);
 			glBegin(GL_TRIANGLES);
 			glColor3f(r, g, b);
-			glVertex2f(-0.7, -0.5);
-			glVertex2f(0.7, -0.5);
-			glVertex2f(0, 0.7);
+			glVertex2f(-0.7f, -0.5f);
+			glVertex2f(0.7f, -0.5f);
+			glVertex2f(0, 0.7f);
 			glEnd();
 		});
-		if (r < 1) r += 0.001;
-		else if (g < 1) g += 0.001;
-		else if (b < 1) b += 0.001;
+		if (r < 1) r += 0.001f;
+		else if (g < 1) g += 0.001f;
+		else if (b < 1) b += 0.001f;
 		else r = b = g = 0;
 		//angle += 0.0001;
 

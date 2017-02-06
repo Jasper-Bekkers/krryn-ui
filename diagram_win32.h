@@ -7,6 +7,9 @@
 #include <set>
 #include <map>
 
+
+
+
 namespace gui_imp{
 	struct diagram_colors;
 	class diagram_port_win32 : public gui::diagram_port_base{

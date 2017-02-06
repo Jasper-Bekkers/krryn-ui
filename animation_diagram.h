@@ -146,7 +146,7 @@ namespace usr{
 				<< a_Node->get_title() << "\n";
 		}
 
-		void save_connection(std::ostream &a_Out, gui::connection &a_Connection){
+		void save_connection(std::ostream &a_Out, const gui::connection &a_Connection){
 			a_Out
 				<< a_Connection.m_PortA << "\t"
 				<< a_Connection.m_PortB << "\n";

@@ -177,7 +177,7 @@ void tabs_impl_win32::set_visible(bool a_IsVisible){
 }
 
 unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned int a_Y, unsigned int a_Index){
-	if(a_X > get_size().m_Width) return a_X;
+	if(a_X > (unsigned int)get_size().m_Width) return a_X;
 
 	Color c = Color(255, 44, 61, 91);
 
@@ -192,7 +192,8 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 	SolidBrush closeLight(Color(255, 206, 212, 221));
 	Pen p(Color(255, 0, 0, 0));
 	Font font(L"Tahoma", 10);
-	PointF origin(a_X + 5, a_Y + 3), originX(a_X + 10, a_Y + 5);
+	PointF origin((Gdiplus::REAL)a_X + 5, (Gdiplus::REAL)a_Y + 3);
+	PointF originX((Gdiplus::REAL)a_X + 10, (Gdiplus::REAL)a_Y + 5);
 
 	RectF bb, close;
 
@@ -212,7 +213,7 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 	int x = a_X; int y = a_Y;
 	int headerHeight = get_size().m_Height / 2;
 	int arcSize = 10;
-	int width = bb.Width;
+	int width = (int)bb.Width;
 
 	// top part = arc
 	gp.AddLine(x, y + headerHeight + arcSize / 2, x, y + arcSize / 2);
@@ -225,7 +226,7 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 	bb.Width += arcSize;
 
 	// bottom = rect
-	g.FillRectangle(&b, a_X, a_Y + headerHeight, bb.Width, 10.f);
+	g.FillRectangle(&b, (Gdiplus::REAL)a_X, (Gdiplus::REAL)(a_Y + headerHeight), bb.Width, 10.f);
 
 	g.DrawString(w.c_str(), w.size(), &font, origin, m_ActiveTab == a_Index ? &black : &white);
 
@@ -233,10 +234,10 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 	if(m_ActiveTab == a_Index || m_HoverTab == a_Index){
 		SolidBrush closeBrush(Color(190, 40, 30));
 		
-		Pen hoverPen(Color::White, 2);
-		Pen regularPen(Color(20, 20, 20), 2);
+		Pen hoverPen(Color(0xFF, 0xFF, 0xFF, 0xFF), 2);
+		Pen regularPen(Color(20, 20, 20).GetValue(), 2);
 
-		Pen *p = &regularPen;
+		Pen *closeButtonPen = &regularPen;
 
 		float shrink = 4;
 
@@ -251,13 +252,13 @@ unsigned int tabs_impl_win32::draw_tab(Graphics &g, unsigned int a_X, unsigned i
 		POINT mouse;
 		GetCursorPos(&mouse);
 		ScreenToClient(m_hWndTabs, &mouse);
-		if(close.Contains(mouse.x, mouse.y)) {
+		if(close.Contains((Gdiplus::REAL)mouse.x, (Gdiplus::REAL)mouse.y)) {
 			g.FillEllipse(&closeBrush, close);
-			p = &hoverPen;
+			closeButtonPen = &hoverPen;
 		}
 
-		g.DrawLine(p, lines.X, lines.Y, lines.X + lines.Width, lines.Y + lines.Height);
-		g.DrawLine(p, lines.X + lines.Width, lines.Y, lines.X, lines.Y + lines.Height);
+		g.DrawLine(closeButtonPen, lines.X, lines.Y, lines.X + lines.Width, lines.Y + lines.Height);
+		g.DrawLine(closeButtonPen, lines.X + lines.Width, lines.Y, lines.X, lines.Y + lines.Height);
 	}
 
 	m_VisibleTabs[a_Index].m_BoundingBox = bb;
@@ -318,10 +319,9 @@ LRESULT tabs_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 		}else if(uMsg == WM_MOUSEMOVE){
 			widget_helper_win32::track_mouseleave(m_hWndTabs);
 
-			unsigned int oldHover = m_HoverTab;
 			m_HoverTab = (unsigned int)-1;
 			for(visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++){
-				bool inside = i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				bool inside = !!i->second.m_BoundingBox.Contains((Gdiplus::REAL)GET_X_LPARAM(lParam), (Gdiplus::REAL)GET_Y_LPARAM(lParam));
 				if(inside){
 					m_HoverTab = i->first;
 					::InvalidateRect(m_hWndTabs, NULL, TRUE);
@@ -334,15 +334,15 @@ LRESULT tabs_impl_win32::process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 			unsigned int oldActive = m_ActiveTab;
 			bool clickedAny = false;
 			for (visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++) {
-				bool inside = !!i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				bool inside = !!i->second.m_BoundingBox.Contains((Gdiplus::REAL)GET_X_LPARAM(lParam), (Gdiplus::REAL)GET_Y_LPARAM(lParam));
 				if (inside) 
 					clickedAny = true;
 			}
 
 			if (clickedAny) {
 				for (visible_tabs_t::iterator i = m_VisibleTabs.begin(); i != m_VisibleTabs.end(); i++) {
-					bool inside = !!i->second.m_BoundingBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-					bool close = !!i->second.m_CloseBox.Contains(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+					bool inside = !!i->second.m_BoundingBox.Contains((Gdiplus::REAL)GET_X_LPARAM(lParam), (Gdiplus::REAL)GET_Y_LPARAM(lParam));
+					bool close = !!i->second.m_CloseBox.Contains((Gdiplus::REAL)GET_X_LPARAM(lParam), (Gdiplus::REAL)GET_Y_LPARAM(lParam));
 
 					if (close) {
 						remove_child(i->first);

@@ -8,7 +8,7 @@ namespace gui{
 	class diagram_serializer;
 
 	typedef unsigned long long diagram_id_t;
-	static const diagram_id_t g_InvalidId = -1;
+	static const diagram_id_t g_InvalidId = ~0ull;
 
 	struct connection{
 		diagram_id_t m_PortA;

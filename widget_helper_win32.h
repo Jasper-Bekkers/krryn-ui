@@ -94,18 +94,18 @@ namespace gui{
 			}
 
 			AdjustWindowRectEx(&l_WindowRect, l_Style, FALSE, l_ExtraStyle);
-
-			if (!(a_hWnd = CreateWindowEx(
-				l_ExtraStyle, widget_helper_win32::window_class(), 
-				"software_context", 
-				l_Style | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 
-				l_WindowRect.left, l_WindowRect.top, 
+			
+			a_hWnd = CreateWindowEx(
+				l_ExtraStyle, widget_helper_win32::window_class(),
+				"software_context",
+				l_Style | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+				l_WindowRect.left, l_WindowRect.top,
 				l_WindowRect.right - l_WindowRect.left,
-				l_WindowRect.bottom - l_WindowRect.top, 
-				l_ParentWnd, NULL, NULL, NULL))){
+				l_WindowRect.bottom - l_WindowRect.top,
+				l_ParentWnd, NULL, NULL, NULL);
 
-					throw widget_exception("Failed to create window");
-
+			if (!a_hWnd){
+				throw widget_exception("Failed to create window");
 			}
 
 			if (a_Initializer.get_fullscreen()) {
@@ -121,7 +121,8 @@ namespace gui{
 				l_Style = visible(a_Initializer) | WS_CHILD;
 			}
 
-			if(!(a_hDC = GetDC(a_hWnd))){
+			a_hDC = GetDC(a_hWnd);
+			if(!a_hDC){
 				throw widget_exception("Can't create opengl context");
 			}
 		}
