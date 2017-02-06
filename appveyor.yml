@@ -6,7 +6,6 @@ cache:
 os: Visual Studio 2015
 platform:
   - x86
-  - x64
 configuration:
 #  - Debug
   - Release
@@ -17,19 +16,6 @@ environment:
       VISUAL_STUDIO_INTERNAL_VERSION: 140
       VISUAL_STUDIO_VERSION: 14.0
 
-init:
-  - ps: |
-      # Determine the platform and create associate environment variables
-      If ($env:Platform -Match "x86") {
-        $env:ARCHITECTURE="32"
-      } Else {
-        $env:ARCHITECTURE="64"
-        $env:CMAKE_GENERATOR_SUFFIX=" Win64"
-      }
-      
-install:
-  - ps: |
-
 before_build:
   - ps: |
       # Create and navigate to the build directory (build outside tree)
@@ -37,7 +23,7 @@ before_build:
       Push-Location build
 
       # Configure the build via CMake
-      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" ..
+      cmake -G "$($env:CMAKE_GENERATOR)" ..
 
       # Move back to working directory
       Pop-Location
