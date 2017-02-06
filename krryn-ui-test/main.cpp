@@ -28,6 +28,7 @@
 
 // Dc.h & Dc.cpp can parse the property definition files (a la DDF)
 // those will need to be turned into "property sheets" and we will need some kind of content storage files
+#include "../file_watcher.h"
 
 using namespace gui;
 
@@ -264,6 +265,8 @@ int main(int argc, char **argv)
 	////////////////
 
 	view::pixel_t *tmp = new view::pixel_t[64 * 64];
+
+	fs::file_watcher::start();
 
 	float r = 0, g = 0, b = 0;
 	while(true)

@@ -49,6 +49,8 @@ add_library(krryn-ui
 	event_loop_impl_base.h
 	event_loop_win32.cpp
 	event_loop_win32.h
+	file_watcher.cpp
+	file_watcher.h
 	input.cpp
 	input.h
 	input_opengl.h
