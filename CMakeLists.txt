@@ -46,7 +46,6 @@ add_library(krryn-ui
 	input_win32.cpp
 	input_win32.h
 	keys.h
-	krryn-ui
 	label.cpp
 	label.h
 	label_impl_base.h
