@@ -66,6 +66,8 @@ namespace gui{
 	};
 	
 	class diagram_connection_policy{
+	public:
+		virtual bool can_connect_ports(gui::diagram_port_base* a_PortA, gui::diagram_port_base* a_PortB);
 	};
 
 	class diagram_factory{

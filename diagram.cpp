@@ -139,3 +139,19 @@ diagram_factory* diagram_initializer::get_factory() const{
 diagram* diagram_initializer::create(){
 	return new diagram(*this);
 }
+
+bool gui::diagram_connection_policy::can_connect_ports(gui::diagram_port_base* a_PortA, gui::diagram_port_base* a_PortB) {
+	gui::diagram_id_t a_FullPortIdA = a_PortA->get_id();
+	gui::diagram_id_t a_FullPortIdB = a_PortB->get_id();
+
+	// don't allow attaching to ports of the same node
+	if (a_FullPortIdA >> 16 == a_FullPortIdB >> 16) {
+		return false;
+	}
+
+	if (a_PortA->get_type() == a_PortB->get_type()) {
+		return false;
+	}
+
+	return true;
+}

@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 	w->move_to(0, 110);
 	auto k = w->create_port(gui::in, "Test");
 
-	diagram_node_base *h = m_Diagram->create_node("hallo");
+	diagram_node_base *h = m_Diagram->create_node("Hallo");
 	h->move_to(110, 110);
 	h->create_port(gui::out, "QQQQ");
 	h->create_port(gui::in, "Mul");

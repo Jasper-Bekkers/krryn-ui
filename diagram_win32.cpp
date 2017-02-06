@@ -14,6 +14,7 @@ namespace gui_imp{
 	struct diagram_colors{
 		SolidBrush selectedTitleBrush;
 		SolidBrush blackBrush;
+		SolidBrush highlightBrush;
 		SolidBrush backgroundBrush;
 		SolidBrush selectedBackgroundBrush;
 		SolidBrush selectionBackground;
@@ -24,10 +25,12 @@ namespace gui_imp{
 		Pen selectionBorder;
 
 		Font font;
+		Font headerFont;
 
 		diagram_colors() :
 			selectedTitleBrush(Color(255, 156, 226, 122)),
 			blackBrush(Color(255, 20, 20, 20)),
+			highlightBrush(Color(255, 132, 172, 217)),
 			backgroundBrush(Color(255, 243, 246, 252)),
 			selectedBackgroundBrush(Color(255, 232, 249, 223)),
 			selectionBackground(Color(127, 215, 195, 162)),
@@ -35,7 +38,8 @@ namespace gui_imp{
 			bezierPen(Color(255, 132, 172, 217), 2.f),
 			selectedBezierPen(Color(255, 156, 226, 122), 2.f),
 			selectionBorder(Color(127, 195, 163, 104), 1.f),
-			font(L"Tahoma", 10) {}
+			font(L"Tahoma", 10),
+			headerFont(L"Tahoma", 10, FontStyleBold){}
 	};
 }
 
@@ -69,7 +73,7 @@ namespace{
 
 	// As a side effect we update the AABB of the port because this function knows exactly what data
 	// is used to draw it and thus gives us pixel accurate results
-	void draw_bullet(Graphics &g, diagram_colors &c, int x, int y, int bulletOffset, diagram_port_win32 *a_Port){
+	void draw_bullet(Graphics &g, diagram_colors &c, int x, int y, int bulletOffset, diagram_port_win32 *a_Port, bool a_HighlightForSelection){
 		RectF rect(float(x + bulletOffset), float(y + 6), 5.0f, 5.0f);
 		g.FillEllipse(&c.bulletBrush, rect);
 
@@ -81,19 +85,21 @@ namespace{
 
 		std::wstring l_Name = to_wstring(a_Port->get_name());
 
+		Brush* brush = a_HighlightForSelection ? &c.highlightBrush : &c.blackBrush;
+
 		if(bulletOffset != 0){
 			StringFormat format;
 			format.SetAlignment(StringAlignmentFar);
 
 			PointF origin((REAL)x + bulletOffset - 4, (REAL)y);
 
-			g.DrawString(l_Name.c_str(), l_Name.size(), &c.font, origin, &format, &c.blackBrush);
+			g.DrawString(l_Name.c_str(), l_Name.size(), &c.font, origin, &format, brush);
 			g.MeasureString(l_Name.c_str(), l_Name.size(), &c.font, origin, &format, &l_OutRect);
 
 			rect.Width += 6; // extend a bit so we have a better clicking region
 		}else{
 			PointF origin((REAL)x + 10.f, (REAL)y);
-			g.DrawString(l_Name.c_str(), l_Name.size(), &c.font, origin, &c.blackBrush);
+			g.DrawString(l_Name.c_str(), l_Name.size(), &c.font, origin, brush);
 			g.MeasureString(l_Name.c_str(), l_Name.size(), &c.font, origin, &l_OutRect);
 
 			rect.X -= 6; // extend region
@@ -138,6 +144,8 @@ void diagram_impl_win32::make(const diagram_initializer &a_Initializer){
 
 	m_Factory = new diagram_factory_win32(
 		a_Initializer.get_factory());
+
+	m_ConnectionPolicy = m_Factory->create_connection_policy();
 
 	m_SelectionChanged = false;
 
@@ -207,7 +215,7 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	RectF layout((REAL)x + arcSize / 2, (REAL)y, 10000, 10000); // last two don't matter we use outrect
 	RectF outrect;
 	std::wstring l_Title = to_wstring(get_title());
-	g.MeasureString(l_Title.c_str(), l_Title.size(), &c.font, layout, &outrect);
+	g.MeasureString(l_Title.c_str(), l_Title.size(), &c.headerFont, layout, &outrect);
 
 	std::pair<int, int> l_InSize = get_max_width_and_total_height(g, c.font, layout, gui::in);
 	std::pair<int, int> l_OutSize = get_max_width_and_total_height(g, c.font, layout, gui::out);
@@ -244,7 +252,7 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 		gp.GetBounds(&l_HeaderAabb);
 	}
 
-	g.DrawString(l_Title.c_str(), l_Title.size(), &c.font, PointF((REAL)x + arcSize / 2, (REAL)y + 5), &c.blackBrush);
+	g.DrawString(l_Title.c_str(), l_Title.size(), &c.headerFont, PointF((REAL)x + arcSize / 2, (REAL)y + 5), &c.blackBrush);
 
 	{
 		GraphicsPath gp;
@@ -270,11 +278,22 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	l_Aabb.Union(l_Aabb, l_HeaderAabb, l_BodyAabb);
 	m_WorldBounds = l_Aabb;
 
+	gui::diagram_connection_policy *l_Policy = m_Win32Parent->get_connection_policy();
+	diagram_port_win32* l_SelectedPort = m_Win32Parent->get_current_selected_port();
+
 	int l_PreviousY = bulletOffset;
 	for(size_t i = 0; i < get_port_count(); i++){
 		diagram_port_win32 *l_Port = (diagram_port_win32*)get_port(i);
 		if(l_Port->get_type() == gui::in){
-			draw_bullet(g, c, x + 6, bulletOffset + headerHeight + arcSize / 2, 0, l_Port);
+
+			bool l_Highlight = false;
+			if (l_SelectedPort) {
+				if (l_Policy->can_connect_ports(l_Port, l_SelectedPort)) {
+					l_Highlight = true;
+				}
+			}
+
+			draw_bullet(g, c, x + 6, bulletOffset + headerHeight + arcSize / 2, 0, l_Port, l_Highlight);
 			bulletOffset += 14;
 		}
 	}
@@ -284,7 +303,15 @@ void diagram_node_win32::draw_node(Graphics &g, diagram_colors &c, int x, int y,
 	for(size_t i = 0; i < get_port_count(); i++){
 		diagram_port_win32 *l_Port = (diagram_port_win32*)get_port(i);
 		if(l_Port->get_type() == gui::out){
-			draw_bullet(g, c, width - l_OutSize.first + x + 6, bulletOffset + headerHeight + arcSize / 2, l_OutSize.first + 3, l_Port);
+
+			bool l_Highlight = false;
+			if (l_SelectedPort) {
+				if (l_Policy->can_connect_ports(l_Port, l_SelectedPort)) {
+					l_Highlight = true;
+				}
+			}
+
+			draw_bullet(g, c, width - l_OutSize.first + x + 6, bulletOffset + headerHeight + arcSize / 2, l_OutSize.first + 3, l_Port, l_Highlight);
 			bulletOffset += 14;
 		}
 	}
@@ -553,26 +580,31 @@ void diagram_impl_win32::destroy_node(diagram_node_base* a_Node){
 	// typically called from node dtor, so no need to delete the node
 }
 
+gui::diagram_connection_policy* gui_imp::diagram_impl_win32::get_connection_policy() {
+	return m_ConnectionPolicy;
+}
+
+diagram_port_win32 * gui_imp::diagram_impl_win32::get_current_selected_port() {
+	return m_BeginPort;
+}
 
 bool diagram_impl_win32::connect(diagram_id_t a_FullPortIdA, diagram_id_t a_FullPortIdB){
-	// don't allow attaching to ports of the same node
-	if(a_FullPortIdA >> 16 == a_FullPortIdB >> 16){
-		return false;
-	}
-
 	diagram_node_base *l_NodeA = m_IdToNodes[a_FullPortIdA >> 16];
 	diagram_node_base *l_NodeB = m_IdToNodes[a_FullPortIdB >> 16];
 
-	if(!l_NodeA || !l_NodeB){
+	if (!l_NodeA || !l_NodeB) {
 		return false;
 	}
 
 	diagram_port_base* l_PortA = l_NodeA->get_port_by_id(a_FullPortIdA);
 	diagram_port_base* l_PortB = l_NodeB->get_port_by_id(a_FullPortIdB);
 
-	if(l_PortA->get_type() == l_PortB->get_type()){
+	if (!l_PortA || !l_PortB) {
 		return false;
 	}
+
+	if (!m_ConnectionPolicy->can_connect_ports(l_PortA, l_PortB))
+		return false;
 
 	m_Connections.push_back(connection(a_FullPortIdA, a_FullPortIdB));
 	return true;

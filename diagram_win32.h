@@ -97,6 +97,9 @@ namespace gui_imp{
 		virtual void set_center(math::point a_Center) { m_CenterX = a_Center.m_X; m_CenterY = a_Center.m_Y; }
 		virtual math::point get_center() const { return math::point(m_CenterX, m_CenterY); }
 		virtual void destroy_node(gui::diagram_node_base* a_Node);
+
+		gui::diagram_connection_policy *get_connection_policy();
+		diagram_port_win32 *get_current_selected_port();
 	private:
 		HDC m_Hdc;
 		bool m_MovingSelection;
@@ -125,6 +128,7 @@ namespace gui_imp{
 		std::map<gui::diagram_id_t, gui::diagram_node_base*> m_IdToNodes;
 		gui::diagram_id_t m_NodeIdCounter;
 		gui::diagram_factory *m_Factory;
+		gui::diagram_connection_policy *m_ConnectionPolicy;
 
 		float m_ScaleX, m_ScaleY;
 
